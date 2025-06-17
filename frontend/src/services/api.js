@@ -119,6 +119,35 @@ class ApiService {
     return this.request(`/reports/${reportId}`);
   }
 
+  // PDF Status and Download methods
+  async getReportStatus(reportId) {
+    return this.request(`/reports/${reportId}/status`);
+  }
+
+  async downloadPDF(reportId) {
+    const url = `${this.baseURL}/reports/${reportId}/pdf`;
+    const token = localStorage.getItem('authToken');
+    
+    const response = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Failed to download PDF');
+    }
+
+    // Return blob for download
+    return response.blob();
+  }
+
+  // System status
+  async getPDFQueueStatus() {
+    return this.request('/system/pdf-status');
+  }
+
   // Utility methods
   isAuthenticated() {
     const token = localStorage.getItem('authToken');

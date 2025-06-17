@@ -272,9 +272,13 @@ const TestQuestions = () => {
       // Clear session data
       localStorage.removeItem('currentTestSession');
       
-      // Navigate to results
+      // Navigate to results with result data
       navigate(`/test/${testId}/results`, { 
-        state: { resultId: result.resultId } 
+        state: { 
+          resultId: result.resultId,
+          results: result.results,
+          pdfStatus: result.pdfStatus
+        } 
       });
       
     } catch (error) {

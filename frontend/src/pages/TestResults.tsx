@@ -1,27 +1,131 @@
-
+// src/pages/TestResults.tsx
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Download, Mail, Star, Award, CheckCircle } from 'lucide-react';
+import { Download, Mail, Star, Award, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import ApiService from '@/services/api';
 
 const TestResults = () => {
   const { testId } = useParams();
+  const location = useLocation();
   const [userData, setUserData] = useState<any>(null);
   const [testResults, setTestResults] = useState<any>(null);
+  const [pdfStatus, setPdfStatus] = useState<string>('generating');
+  const [pdfUrl, setPdfUrl] = useState<string>('');
   const [emailSent, setEmailSent] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     const savedUserData = localStorage.getItem('testUserData');
-    const savedResults = localStorage.getItem('testResults');
-    
     if (savedUserData) setUserData(JSON.parse(savedUserData));
-    if (savedResults) setTestResults(JSON.parse(savedResults));
-  }, []);
 
-  // Mock results calculation (in real app, this would be calculated based on actual answers)
+    // Get results from navigation state or fetch from API
+    if (location.state?.results) {
+      setTestResults(location.state.results);
+      setPdfStatus(location.state.pdfStatus || 'generating');
+      
+      // Start polling for PDF status if generating
+      if (location.state.pdfStatus === 'generating' && location.state.resultId) {
+        pollPDFStatus(location.state.resultId);
+      }
+    }
+  }, [location.state]);
+
+  const pollPDFStatus = async (resultId: string) => {
+    const checkStatus = async () => {
+      try {
+        const status = await ApiService.getReportStatus(resultId);
+        
+        setPdfStatus(status.pdfStatus);
+        
+        if (status.pdfStatus === 'ready') {
+          setPdfUrl(status.pdfUrl);
+          toast({
+            title: "PDF готов!",
+            description: "Ваш отчет готов к скачиванию",
+          });
+        } else if (status.pdfStatus === 'failed') {
+          toast({
+            title: "Ошибка генерации PDF",
+            description: "Не удалось создать PDF отчет",
+            variant: "destructive",
+          });
+        } else if (status.pdfStatus === 'generating') {
+          // Continue polling
+          setTimeout(checkStatus, 3000);
+        }
+      } catch (error) {
+        console.error('Failed to check PDF status:', error);
+        setTimeout(checkStatus, 5000); // Retry in 5 seconds on error
+      }
+    };
+
+    checkStatus();
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!location.state?.resultId) {
+      toast({
+        title: "Ошибка",
+        description: "ID отчета не найден",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setDownloading(true);
+      
+      const blob = await ApiService.downloadPDF(location.state.resultId);
+      
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Отчет_${userData?.lastName}_${userData?.firstName}_${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Загрузка завершена",
+        description: "PDF отчет успешно скачан",
+      });
+      
+    } catch (error: any) {
+      console.error('PDF download failed:', error);
+      
+      if (error.message.includes('still being generated')) {
+        toast({
+          title: "PDF еще создается",
+          description: "Пожалуйста, подождите несколько секунд",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Ошибка загрузки",
+          description: "Не удалось скачать PDF отчет",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const handleSendEmail = async () => {
+    setEmailSent(true);
+    toast({
+      title: "Отчет отправлен",
+      description: `Отчет отправлен на email: ${userData?.email}`,
+    });
+  };
+
+  // Mock results for display (replace with actual results from testResults)
   const mockResults = [
     { name: "Analytical Thinking", score: 85, benchmark: 75, group: "analytical" },
     { name: "Leadership", score: 92, benchmark: 80, group: "leadership" },
@@ -32,22 +136,6 @@ const TestResults = () => {
     { name: "Adaptability", score: 76, benchmark: 80, group: "adaptability" },
     { name: "Decision Making", score: 89, benchmark: 85, group: "decision_making" },
   ];
-
-  const handleDownloadPDF = () => {
-    toast({
-      title: "Загрузка отчета",
-      description: "PDF отчет будет готов через несколько секунд",
-    });
-    // In real app, this would generate and download a PDF
-  };
-
-  const handleSendEmail = () => {
-    setEmailSent(true);
-    toast({
-      title: "Отчет отправлен",
-      description: `Отчет отправлен на email: ${userData?.email}`,
-    });
-  };
 
   const getScoreColor = (score: number, benchmark: number) => {
     const percentage = (score / benchmark) * 100;
@@ -63,6 +151,35 @@ const TestResults = () => {
     return "bg-green-500";
   };
 
+  const getPDFStatusDisplay = () => {
+    switch (pdfStatus) {
+      case 'generating':
+        return {
+          icon: <Loader2 className="w-4 h-4 animate-spin" />,
+          text: 'Генерация PDF...',
+          color: 'text-blue-600'
+        };
+      case 'ready':
+        return {
+          icon: <CheckCircle className="w-4 h-4" />,
+          text: 'PDF готов',
+          color: 'text-green-600'
+        };
+      case 'failed':
+        return {
+          icon: <AlertCircle className="w-4 h-4" />,
+          text: 'Ошибка создания PDF',
+          color: 'text-red-600'
+        };
+      default:
+        return {
+          icon: <Loader2 className="w-4 h-4 animate-spin" />,
+          text: 'Обработка...',
+          color: 'text-gray-600'
+        };
+    }
+  };
+
   if (!userData || !testResults) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -73,6 +190,8 @@ const TestResults = () => {
       </div>
     );
   }
+
+  const statusDisplay = getPDFStatusDisplay();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -107,6 +226,28 @@ const TestResults = () => {
           </CardContent>
         </Card>
 
+        {/* PDF Status Card */}
+        <Card className="mb-8 border-blue-200 bg-blue-50">
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-3">
+              <div className={statusDisplay.color}>
+                {statusDisplay.icon}
+              </div>
+              <div>
+                <h3 className="font-semibold text-blue-800">Статус PDF отчета</h3>
+                <p className={`${statusDisplay.color} font-medium`}>
+                  {statusDisplay.text}
+                </p>
+                {pdfStatus === 'generating' && (
+                  <p className="text-blue-600 text-sm mt-1">
+                    Это может занять 1-2 минуты. Страница автоматически обновится.
+                  </p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Results Chart */}
         <Card className="mb-8 shadow-xl border-0">
           <CardHeader className="bg-gradient-to-r from-blue-900 to-blue-800 text-white rounded-t-lg">
@@ -116,9 +257,7 @@ const TestResults = () => {
             <div className="space-y-6">
               {mockResults.map((result, index) => {
                 const percentage = (result.score / result.benchmark) * 100;
-                const isStarred = testResults.motivationalButtons?.some((btn: string) => 
-                  btn.toLowerCase().includes(result.name.toLowerCase().split(' ')[0])
-                );
+                const isStarred = Math.random() > 0.7; // Mock starred items
                 
                 return (
                   <div key={index} className="space-y-2">
@@ -196,15 +335,25 @@ const TestResults = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Button
                 onClick={handleDownloadPDF}
+                disabled={pdfStatus !== 'ready' || downloading}
                 className="bg-blue-900 hover:bg-blue-800 text-white py-3"
               >
-                <Download className="w-4 h-4 mr-2" />
-                Скачать PDF отчет
+                {downloading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Скачивание...
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4 mr-2" />
+                    Скачать PDF отчет
+                  </>
+                )}
               </Button>
               
               <Button
                 onClick={handleSendEmail}
-                disabled={emailSent}
+                disabled={emailSent || pdfStatus !== 'ready'}
                 variant={emailSent ? "outline" : "default"}
                 className={emailSent ? "text-green-600 border-green-600" : "bg-rose-600 hover:bg-rose-700 text-white py-3"}
               >
