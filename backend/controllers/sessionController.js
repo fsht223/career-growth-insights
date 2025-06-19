@@ -203,6 +203,8 @@ const completeTest = async (req, res) => {
     const test = testResult.rows[0];
 
     // Calculate results
+    console.log('Session answers:', session.answers);
+    console.log('Test golden_line:', test.golden_line);
     const results = calculateTestResults(session, test);
 
     // Mark session as completed
@@ -254,40 +256,63 @@ const completeTest = async (req, res) => {
   }
 };
 
-// Helper function to calculate results
+const ALL_BUTTONS = [
+  "Intuition", "Success", "Professional Pleasure", "Bringing Happiness",
+  "Perfectionism", "Social Contact", "Empathy", "Recognition",
+  "Resilience", "Respect", "Efficiency", "Intellectual Discovery",
+  "Team Spirit", "Influence", "Responsibility", "Reaching Goals",
+  "Being Logical", "Social Approval"
+];
+
+const getDefaultGoldenLine = () => {
+  // Fallback values (average or typical values from your data)
+  return {
+    "Intuition": 11,
+    "Success": 11,
+    "Professional Pleasure": 11,
+    "Bringing Happiness": 11,
+    "Perfectionism": 11,
+    "Social Contact": 11,
+    "Empathy": 11,
+    "Recognition": 11,
+    "Resilience": 11,
+    "Respect": 11,
+    "Efficiency": 11,
+    "Intellectual Discovery": 11,
+    "Team Spirit": 11,
+    "Influence": 11,
+    "Responsibility": 11,
+    "Reaching Goals": 11,
+    "Being Logical": 11,
+    "Social Approval": 11
+  };
+};
+
 const calculateTestResults = (session, test) => {
   const goldenLines = require('../data/goldenLines');
-  const goldenLine = goldenLines.find(gl => gl.profession === test.golden_line);
-  
+  let goldenLine = goldenLines.find(gl => gl.profession === test.golden_line);
   if (!goldenLine) {
     console.warn('Golden line not found for profession:', test.golden_line);
-    return {
-      groupScores: {},
-      percentages: {},
-      starredItems: session.motivational_selection || [],
-      goldenLine: {}
-    };
+    goldenLine = { values: getDefaultGoldenLine() };
   }
 
+  // Initialize scores for all buttons
   const groupScores = {};
-  
-  // Initialize group scores
-  Object.keys(goldenLine.values).forEach(group => {
-    groupScores[group] = 0;
-  });
+  ALL_BUTTONS.forEach(btn => { groupScores[btn] = 0; });
 
-  // Calculate scores from answers
+  // Calculate scores from answers (questions 1-39)
   const answers = session.answers || {};
-  
   Object.entries(answers).forEach(([questionId, answer]) => {
-    const question = questions.getQuestionById(parseInt(questionId));
-    if (question && answer && typeof answer === 'object') {
+    const qId = parseInt(questionId);
+    if (qId >= 1 && qId <= 39 && answer && typeof answer === 'object') {
+      // Find all option IDs for this question
+      const question = require('../data/questions').getQuestionById(qId);
+      if (!question) return;
+      // First, second, third choices
       const firstChoice = question.options.find(opt => opt.id === answer.first);
       const secondChoice = question.options.find(opt => opt.id === answer.second);
-      const thirdChoice = question.options.find(opt => 
-        opt.id !== answer.first && opt.id !== answer.second
-      );
-
+      // Third is the one not chosen
+      const thirdChoice = question.options.find(opt => opt.id !== answer.first && opt.id !== answer.second);
       if (firstChoice && groupScores.hasOwnProperty(firstChoice.group)) {
         groupScores[firstChoice.group] += 3;
       }
@@ -300,17 +325,23 @@ const calculateTestResults = (session, test) => {
     }
   });
 
-  // Calculate percentages
+  // Calculate percentages for each button
   const percentages = {};
-  Object.entries(groupScores).forEach(([group, score]) => {
-    const goldenValue = goldenLine.values[group];
-    percentages[group] = goldenValue ? (score / goldenValue) * 100 : 0;
+  ALL_BUTTONS.forEach(btn => {
+    const goldenValue = goldenLine.values[btn] || 1; // avoid division by zero
+    percentages[btn] = goldenValue ? (groupScores[btn] / goldenValue) * 100 : 0;
   });
+
+  // Starred items from Q40
+  let starredItems = [];
+  if (session.motivational_selection && Array.isArray(session.motivational_selection)) {
+    starredItems = session.motivational_selection;
+  }
 
   return {
     groupScores,
     percentages,
-    starredItems: session.motivational_selection || [],
+    starredItems,
     goldenLine: goldenLine.values
   };
 };

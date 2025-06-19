@@ -48,8 +48,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const initAuth = async () => {
       try {
         if (ApiService.isAuthenticated()) {
-          // Verify token with backend
-          await ApiService.verifyToken();
+          // Verify token with backend with timeout
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Request timeout')), 5000)
+          );
+          
+          const verifyPromise = ApiService.verifyToken();
+          
+          await Promise.race([verifyPromise, timeoutPromise]);
           const userData = ApiService.getCurrentUser();
           setUser(userData);
         }

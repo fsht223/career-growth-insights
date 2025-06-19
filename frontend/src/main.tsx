@@ -1,14 +1,20 @@
 // src/main.tsx
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
-import { AuthProvider } from './context/AuthContext'
-import ErrorBoundary from './components/ErrorBoundary'
 import './index.css'
 
-createRoot(document.getElementById("root")!).render(
-  <ErrorBoundary>
-    <AuthProvider>
-      <App />
-    </AuthProvider>
-  </ErrorBoundary>
-);
+console.log('Starting React application...');
+
+const rootElement = document.getElementById("root");
+if (!rootElement) {
+  throw new Error('Root element not found');
+}
+
+const root = createRoot(rootElement);
+
+try {
+  root.render(<App />);
+  console.log('React application rendered successfully');
+} catch (error) {
+  console.error('Failed to render React application:', error);
+}

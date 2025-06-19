@@ -123,8 +123,8 @@ const Dashboard = () => {
   };
 
   const getStatusBadge = (test: Test) => {
-    const completedCount = reports.filter(r => r.testId === test.id).length;
-    const registeredCount = test.registeredEmails.length;
+    const completedCount = (reports || []).filter(r => r.testId === test.id).length;
+    const registeredCount = (test.registeredEmails || []).length;
     
     if (completedCount > 0) {
       return (
@@ -166,11 +166,15 @@ const Dashboard = () => {
     });
   };
 
+  // Add safe defaults for tests and reports
+  const safeTests = tests || [];
+  const safeReports = reports || [];
+
   const statsData = {
-    totalTests: tests.length,
-    completedTests: reports.length,
-    activeTests: tests.filter(t => t.registeredEmails.length > 0 && !reports.some(r => r.testId === t.id)).length,
-    totalParticipants: new Set(reports.map(r => r.testeeEmail)).size
+    totalTests: safeTests.length,
+    completedTests: safeReports.length,
+    activeTests: safeTests.filter(t => (t.registeredEmails || []).length > 0 && !safeReports.some(r => r.testId === t.id)).length,
+    totalParticipants: new Set(safeReports.map(r => r.testeeEmail)).size
   };
 
   if (loading) {
@@ -393,7 +397,7 @@ const Dashboard = () => {
                       
                       <div className="flex justify-between items-center pt-2">
                         <div className="text-sm text-slate-600">
-                          <span>Зарегистрировано: {test.registeredEmails.length}</span>
+                          <span>Зарегистрировано: {(test.registeredEmails || []).length}</span>
                           {test.testeeEmail && (
                             <span className="ml-4">Email: {test.testeeEmail}</span>
                           )}

@@ -271,8 +271,16 @@ const TestQuestions = () => {
       
       // Clear session data
       localStorage.removeItem('currentTestSession');
-      
+      // Save user info for results page (robust)
+      const sessionData = localStorage.getItem('currentTestSession');
+      if (sessionData) {
+        const { userInfo } = JSON.parse(sessionData);
+        if (userInfo) {
+          localStorage.setItem('testUserData', JSON.stringify(userInfo));
+        }
+      }
       // Navigate to results with result data
+      localStorage.setItem('lastResultId', result.resultId);
       navigate(`/test/${testId}/results`, { 
         state: { 
           resultId: result.resultId,

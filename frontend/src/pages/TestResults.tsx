@@ -22,52 +22,20 @@ const TestResults = () => {
     const savedUserData = localStorage.getItem('testUserData');
     if (savedUserData) setUserData(JSON.parse(savedUserData));
 
-    // Get results from navigation state or fetch from API
-    if (location.state?.results) {
-      setTestResults(location.state.results);
-      setPdfStatus(location.state.pdfStatus || 'generating');
-      
-      // Start polling for PDF status if generating
-      if (location.state.pdfStatus === 'generating' && location.state.resultId) {
-        pollPDFStatus(location.state.resultId);
-      }
+    let resultId = location.state?.resultId || localStorage.getItem('lastResultId');
+    if (resultId) {
+      ApiService.getReport(resultId).then(report => {
+        console.log('Fetched report:', report); // Debug
+        setTestResults(report.results);
+        setPdfStatus(report.pdfStatus || 'generating');
+        setPdfUrl(report.pdfUrl || '');
+      });
     }
   }, [location.state]);
 
-  const pollPDFStatus = async (resultId: string) => {
-    const checkStatus = async () => {
-      try {
-        const status = await ApiService.getReportStatus(resultId);
-        
-        setPdfStatus(status.pdfStatus);
-        
-        if (status.pdfStatus === 'ready') {
-          setPdfUrl(status.pdfUrl);
-          toast({
-            title: "PDF готов!",
-            description: "Ваш отчет готов к скачиванию",
-          });
-        } else if (status.pdfStatus === 'failed') {
-          toast({
-            title: "Ошибка генерации PDF",
-            description: "Не удалось создать PDF отчет",
-            variant: "destructive",
-          });
-        } else if (status.pdfStatus === 'generating') {
-          // Continue polling
-          setTimeout(checkStatus, 3000);
-        }
-      } catch (error) {
-        console.error('Failed to check PDF status:', error);
-        setTimeout(checkStatus, 5000); // Retry in 5 seconds on error
-      }
-    };
-
-    checkStatus();
-  };
-
   const handleDownloadPDF = async () => {
-    if (!location.state?.resultId) {
+    const resultId = location.state?.resultId || localStorage.getItem('lastResultId');
+    if (!resultId) {
       toast({
         title: "Ошибка",
         description: "ID отчета не найден",
@@ -79,7 +47,7 @@ const TestResults = () => {
     try {
       setDownloading(true);
       
-      const blob = await ApiService.downloadPDF(location.state.resultId);
+      const blob = await ApiService.downloadPDF(resultId);
       
       // Create download link
       const url = window.URL.createObjectURL(blob);
@@ -125,17 +93,16 @@ const TestResults = () => {
     });
   };
 
-  // Mock results for display (replace with actual results from testResults)
-  const mockResults = [
-    { name: "Analytical Thinking", score: 85, benchmark: 75, group: "analytical" },
-    { name: "Leadership", score: 92, benchmark: 80, group: "leadership" },
-    { name: "Communication", score: 78, benchmark: 85, group: "communication" },
-    { name: "Innovation", score: 95, benchmark: 70, group: "innovation" },
-    { name: "Team Collaboration", score: 88, benchmark: 90, group: "teamwork" },
-    { name: "Problem Solving", score: 82, benchmark: 75, group: "problem_solving" },
-    { name: "Adaptability", score: 76, benchmark: 80, group: "adaptability" },
-    { name: "Decision Making", score: 89, benchmark: 85, group: "decision_making" },
-  ];
+  // Transform testResults into an array for rendering
+  const motivationButtons = testResults && testResults.groupScores
+    ? Object.keys(testResults.groupScores).map((btn) => ({
+        name: btn,
+        score: testResults.groupScores[btn],
+        benchmark: testResults.goldenLine[btn] || 1,
+        percentage: testResults.percentages[btn],
+        isStarred: testResults.starredItems && testResults.starredItems.includes(btn)
+      }))
+    : [];
 
   const getScoreColor = (score: number, benchmark: number) => {
     const percentage = (score / benchmark) * 100;
@@ -180,7 +147,8 @@ const TestResults = () => {
     }
   };
 
-  if (!userData || !testResults) {
+  if (!testResults) {
+    console.log('userData:', userData, 'testResults:', testResults); // Debug
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
@@ -190,6 +158,11 @@ const TestResults = () => {
       </div>
     );
   }
+
+  // Fallbacks for userData fields
+  const firstName = userData?.firstName || testResults.testeeName?.split(' ')[0] || 'Имя';
+  const lastName = userData?.lastName || testResults.testeeName?.split(' ')[1] || '';
+  const profession = userData?.profession || testResults.profession || 'Профессия';
 
   const statusDisplay = getPDFStatusDisplay();
 
@@ -204,7 +177,7 @@ const TestResults = () => {
               <h1 className="text-2xl font-bold text-slate-800">Результаты тестирования</h1>
             </div>
             <p className="text-slate-600">
-              {userData.firstName} {userData.lastName} • {userData.profession}
+              {firstName} {lastName} • {profession}
             </p>
           </div>
         </div>
@@ -255,55 +228,47 @@ const TestResults = () => {
           </CardHeader>
           <CardContent className="p-8">
             <div className="space-y-6">
-              {mockResults.map((result, index) => {
-                const percentage = (result.score / result.benchmark) * 100;
-                const isStarred = Math.random() > 0.7; // Mock starred items
-                
-                return (
-                  <div key={index} className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center space-x-2">
-                        <span className="font-medium text-slate-800">{result.name}</span>
-                        {isStarred && <Star className="w-4 h-4 text-yellow-500 fill-current" />}
-                      </div>
-                      <div className="text-right">
-                        <span className={`font-bold ${getScoreColor(result.score, result.benchmark)}`}>
-                          {Math.round(percentage)}%
-                        </span>
-                        <div className="text-xs text-slate-500">
-                          {result.score}/{result.benchmark}
-                        </div>
-                      </div>
+              {motivationButtons.map((result, index) => (
+                <div key={index} className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center space-x-2">
+                      <span className="font-medium text-slate-800">{result.name}</span>
+                      {result.isStarred && <Star className="w-4 h-4 text-yellow-500 fill-current" />}
                     </div>
-                    
-                    <div className="relative">
-                      <Progress 
-                        value={Math.min(percentage, 120)} 
-                        className="h-4 bg-slate-200"
-                      />
-                      <div 
-                        className={`absolute top-0 left-0 h-4 rounded-full transition-all ${getProgressColor(result.score, result.benchmark)}`}
-                        style={{ width: `${Math.min(percentage, 120)}%` }}
-                      />
-                      
-                      {/* Benchmark line */}
-                      <div 
-                        className="absolute top-0 h-4 w-0.5 bg-slate-800"
-                        style={{ left: '100%' }}
-                      />
-                    </div>
-                    
-                    <div className="flex justify-between text-xs text-slate-500">
-                      <span>
-                        {percentage < 90 ? 'Potential development area' : 
-                         percentage > 110 ? 'Potential development area' : 
-                         'Aligned with benchmark'}
+                    <div className="text-right">
+                      <span className={`font-bold ${getScoreColor(result.score, result.benchmark)}`}>
+                        {Math.round(result.percentage)}%
                       </span>
-                      <span>Benchmark: 100%</span>
+                      <div className="text-xs text-slate-500">
+                        {result.score}/{result.benchmark}
+                      </div>
                     </div>
                   </div>
-                );
-              })}
+                  <div className="relative">
+                    <Progress 
+                      value={Math.min(result.percentage, 120)} 
+                      className="h-4 bg-slate-200"
+                    />
+                    <div 
+                      className={`absolute top-0 left-0 h-4 rounded-full transition-all ${getProgressColor(result.score, result.benchmark)}`}
+                      style={{ width: `${Math.min(result.percentage, 120)}%` }}
+                    />
+                    {/* Benchmark line */}
+                    <div 
+                      className="absolute top-0 h-4 w-0.5 bg-slate-800"
+                      style={{ left: '100%' }}
+                    />
+                  </div>
+                  <div className="flex justify-between text-xs text-slate-500">
+                    <span>
+                      {result.percentage < 90 ? 'Potential development area' : 
+                        result.percentage > 110 ? 'Potential development area' : 
+                        'Aligned with benchmark'}
+                    </span>
+                    <span>Benchmark: 100%</span>
+                  </div>
+                </div>
+              ))}
             </div>
 
             <div className="mt-8 p-4 bg-slate-50 rounded-lg">
