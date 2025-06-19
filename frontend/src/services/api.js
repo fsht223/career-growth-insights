@@ -1,169 +1,115 @@
-// src/services/api.js
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+import axios from 'axios';
+import { API_BASE_URL } from '@/utils/constants';
+import { authService } from './auth';
 
 class ApiService {
   constructor() {
-    this.baseURL = API_BASE_URL;
-  }
-
-  async request(endpoint, options = {}) {
-    const url = `${this.baseURL}${endpoint}`;
-    const config = {
+    this.client = axios.create({
+      baseURL: API_BASE_URL,
       headers: {
         'Content-Type': 'application/json',
-        ...options.headers,
       },
-      ...options,
-    };
+    });
 
-    // Add auth token if available
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    // Request interceptor
+    this.client.interceptors.request.use(
+      (config) => {
+        const token = authService.getToken();
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+      },
+      (error) => Promise.reject(error)
+    );
 
-    try {
-      const response = await fetch(url, config);
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    // Response interceptor
+    this.client.interceptors.response.use(
+      (response) => response.data,
+      (error) => {
+        if (error.response?.status === 401) {
+          authService.clearAuth();
+          window.location.href = '/login';
+        }
+        return Promise.reject(error.response?.data || error);
       }
-
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        return await response.json();
-      }
-      
-      return await response.text();
-    } catch (error) {
-      console.error('API request failed:', error);
-      throw error;
-    }
+    );
   }
 
-  // Auth methods
-  async login(email, password) {
-    const response = await this.request('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    });
-    
-    if (response.token) {
-      localStorage.setItem('authToken', response.token);
-      localStorage.setItem('userData', JSON.stringify(response.user));
-    }
-    
+  // Auth endpoints
+  async register(data) {
+    const response = await this.client.post('/auth/register', data);
+    authService.saveAuth(response.token, response.user);
     return response;
   }
 
-  logout() {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('userData');
+  async login(email, password) {
+    const response = await this.client.post('/auth/login', { email, password });
+    authService.saveAuth(response.token, response.user);
+    return response;
   }
 
-  // Test management methods
-  async createTest(testData) {
-    return this.request('/tests', {
-      method: 'POST',
-      body: JSON.stringify(testData),
-    });
+  async verifyToken() {
+    return this.client.get('/auth/verify');
+  }
+
+  // Test management
+  async createTest(data) {
+    return this.client.post('/tests', data);
   }
 
   async getTests() {
-    return this.request('/tests');
+    return this.client.get('/tests');
+  }
+
+  async getTestDetails(testId) {
+    return this.client.get(`/tests/${testId}`);
   }
 
   async deleteTest(testId) {
-    return this.request(`/tests/${testId}`, {
-      method: 'DELETE',
-    });
+    return this.client.delete(`/tests/${testId}`);
   }
 
-  // Test session methods (for customers)
+  // Test taking
   async getTestInfo(testId) {
-    return this.request(`/test/${testId}`);
+    return this.client.get(`/test/${testId}`);
   }
 
-  async registerForTest(testId, userData) {
-    return this.request(`/test/${testId}/register`, {
-      method: 'POST',
-      body: JSON.stringify(userData),
-    });
+  async registerForTest(testId, data) {
+    return this.client.post(`/test/${testId}/register`, data);
   }
 
-  async getTestQuestions(testId) {
-    return this.request(`/test/${testId}/questions`);
+  async getQuestions(testId) {
+    return this.client.get(`/test/${testId}/questions`);
   }
 
-  async saveAnswer(testId, answerData) {
-    return this.request(`/test/${testId}/answer`, {
-      method: 'POST',
-      body: JSON.stringify(answerData),
-    });
+  async saveAnswer(testId, data) {
+    return this.client.post(`/test/${testId}/answer`, data);
   }
 
-  async completeTest(testId, sessionData) {
-    return this.request(`/test/${testId}/complete`, {
-      method: 'POST',
-      body: JSON.stringify(sessionData),
-    });
+  async completeTest(testId, data) {
+    return this.client.post(`/test/${testId}/complete`, data);
   }
 
-  // Reports methods
+  // Reports
   async getReports() {
-    return this.request('/reports');
+    return this.client.get('/reports');
   }
 
-  async getReport(reportId) {
-    return this.request(`/reports/${reportId}`);
-  }
-
-  // PDF Status and Download methods
   async getReportStatus(reportId) {
-    return this.request(`/reports/${reportId}/status`);
+    return this.client.get(`/reports/${reportId}/status`);
   }
 
   async downloadPDF(reportId) {
-    const url = `${this.baseURL}/reports/${reportId}/pdf`;
-    const token = localStorage.getItem('authToken');
-    
-    const response = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+    const response = await this.client.get(`/reports/${reportId}/pdf`, {
+      responseType: 'blob',
     });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || 'Failed to download PDF');
-    }
-
-    // Return blob for download
-    return response.blob();
+    return response;
   }
 
-  // System status
-  async getPDFQueueStatus() {
-    return this.request('/system/pdf-status');
-  }
-
-  // Utility methods
-  isAuthenticated() {
-    const token = localStorage.getItem('authToken');
-    if (!token) return false;
-
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      return payload.exp > Date.now() / 1000;
-    } catch {
-      return false;
-    }
-  }
-
-  getCurrentUser() {
-    const userData = localStorage.getItem('userData');
-    return userData ? JSON.parse(userData) : null;
+  // Dashboard
+  async getDashboardStats() {
+    return this.client.get('/dashboard/stats');
   }
 }
 
