@@ -8,6 +8,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
 import { Eye, EyeOff, FileText } from 'lucide-react';
 import ApiService from '@/services/api';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface FormData {
   firstName: string;
@@ -26,6 +27,7 @@ interface FormErrors {
 }
 
 const Register = () => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState<FormData>({
     firstName: '',
     lastName: '',
@@ -45,39 +47,39 @@ const Register = () => {
 
     // First name validation
     if (!formData.firstName.trim()) {
-      newErrors.firstName = 'Имя обязательно';
+      newErrors.firstName = t('register.firstNameRequired');
     } else if (formData.firstName.trim().length < 2) {
-      newErrors.firstName = 'Имя должно содержать минимум 2 символа';
+      newErrors.firstName = t('register.firstNameRequired');
     }
 
     // Last name validation
     if (!formData.lastName.trim()) {
-      newErrors.lastName = 'Фамилия обязательна';
+      newErrors.lastName = t('register.lastNameRequired');
     } else if (formData.lastName.trim().length < 2) {
-      newErrors.lastName = 'Фамилия должна содержать минимум 2 символа';
+      newErrors.lastName = t('register.lastNameRequired');
     }
 
     // Email validation
     if (!formData.email.trim()) {
-      newErrors.email = 'Email обязателен';
+      newErrors.email = t('register.emailRequired');
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Неверный формат email';
+      newErrors.email = t('login.invalidEmail');
     }
 
     // Password validation
     if (!formData.password) {
-      newErrors.password = 'Пароль обязателен';
+      newErrors.password = t('register.passwordRequired');
     } else if (formData.password.length < 8) {
-      newErrors.password = 'Пароль должен содержать минимум 8 символов';
+      newErrors.password = t('register.passwordRequired');
     } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
-      newErrors.password = 'Пароль должен содержать заглавную букву, строчную букву и цифру';
+      newErrors.password = t('register.passwordRequired');
     }
 
     // Confirm password validation
     if (!formData.confirmPassword) {
-      newErrors.confirmPassword = 'Подтверждение пароля обязательно';
+      newErrors.confirmPassword = t('register.confirmPasswordRequired');
     } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Пароли не совпадают';
+      newErrors.confirmPassword = t('register.passwordMismatch');
     }
 
     setErrors(newErrors);
@@ -114,8 +116,8 @@ const Register = () => {
       const response = await ApiService.register(registerData);
       
       toast({
-        title: "Регистрация успешна!",
-        description: `Добро пожаловать, ${response.user.firstName}!`,
+        title: t('register.success'),
+        description: t('register.welcome', { name: response.user.firstName }),
       });
 
       // Navigate to dashboard after successful registration
@@ -124,13 +126,13 @@ const Register = () => {
     } catch (error: any) {
       console.error('Registration failed:', error);
       
-      const errorMessage = error.message || 'Произошла ошибка при регистрации';
+      const errorMessage = error.message || t('register.error');
       
       if (errorMessage.includes('Email already registered')) {
-        setErrors({ email: 'Пользователь с таким email уже существует' });
+        setErrors({ email: t('register.already') });
       } else {
         toast({
-          title: "Ошибка регистрации",
+          title: t('register.error'),
           description: errorMessage,
           variant: "destructive",
         });
@@ -147,9 +149,9 @@ const Register = () => {
           <CardHeader className="text-center bg-gradient-to-r from-blue-900 to-blue-800 text-white rounded-t-lg">
             <div className="flex items-center justify-center space-x-3 mb-2">
               <FileText className="w-8 h-8" />
-              <CardTitle className="text-2xl font-bold">Регистрация</CardTitle>
+              <CardTitle className="text-2xl font-bold">{t('register.title')}</CardTitle>
             </div>
-            <p className="text-blue-100">Создание аккаунта коуча</p>
+            <p className="text-blue-100">{t('register.platform')}</p>
           </CardHeader>
           
           <CardContent className="p-8">
@@ -157,13 +159,13 @@ const Register = () => {
               {/* First Name */}
               <div className="space-y-2">
                 <Label htmlFor="firstName" className="text-slate-700">
-                  Имя *
+                  {t('register.firstName')}
                 </Label>
                 <Input
                   id="firstName"
                   name="firstName"
                   type="text"
-                  placeholder="Введите ваше имя"
+                  placeholder={t('register.firstName')}
                   value={formData.firstName}
                   onChange={handleChange}
                   className={`border-slate-300 focus:border-blue-500 ${
@@ -180,13 +182,13 @@ const Register = () => {
               {/* Last Name */}
               <div className="space-y-2">
                 <Label htmlFor="lastName" className="text-slate-700">
-                  Фамилия *
+                  {t('register.lastName')}
                 </Label>
                 <Input
                   id="lastName"
                   name="lastName"
                   type="text"
-                  placeholder="Введите вашу фамилию"
+                  placeholder={t('register.lastName')}
                   value={formData.lastName}
                   onChange={handleChange}
                   className={`border-slate-300 focus:border-blue-500 ${
@@ -203,7 +205,7 @@ const Register = () => {
               {/* Email */}
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-slate-700">
-                  Email *
+                  {t('register.email')}
                 </Label>
                 <Input
                   id="email"
@@ -226,14 +228,14 @@ const Register = () => {
               {/* Password */}
               <div className="space-y-2">
                 <Label htmlFor="password" className="text-slate-700">
-                  Пароль *
+                  {t('register.password')}
                 </Label>
                 <div className="relative">
                   <Input
                     id="password"
                     name="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder="Минимум 8 символов"
+                    placeholder={t('register.password')}
                     value={formData.password}
                     onChange={handleChange}
                     className={`border-slate-300 focus:border-blue-500 pr-10 ${
@@ -258,22 +260,19 @@ const Register = () => {
                 {errors.password && (
                   <p className="text-sm text-red-600">{errors.password}</p>
                 )}
-                <p className="text-xs text-slate-500">
-                  Должен содержать заглавную букву, строчную букву и цифру
-                </p>
               </div>
 
               {/* Confirm Password */}
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword" className="text-slate-700">
-                  Подтверждение пароля *
+                  {t('register.confirmPassword')}
                 </Label>
                 <div className="relative">
                   <Input
                     id="confirmPassword"
                     name="confirmPassword"
                     type={showConfirmPassword ? "text" : "password"}
-                    placeholder="Повторите пароль"
+                    placeholder={t('register.confirmPassword')}
                     value={formData.confirmPassword}
                     onChange={handleChange}
                     className={`border-slate-300 focus:border-blue-500 pr-10 ${
@@ -309,35 +308,28 @@ const Register = () => {
                 {isLoading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Создание аккаунта...
+                    {t('register.loading')}
                   </>
                 ) : (
-                  'Создать аккаунт'
+                  t('register.button')
                 )}
               </Button>
 
               {/* Login Link */}
-              <div className="text-center pt-4">
+              <div className="text-center pt-4 border-t border-slate-200">
                 <p className="text-sm text-slate-600">
-                  Уже есть аккаунт?{' '}
+                  {t('register.haveAccount')} 
                   <Link 
                     to="/login" 
                     className="text-blue-600 hover:text-blue-800 font-medium"
                   >
-                    Войти
+                    {t('register.login')}
                   </Link>
                 </p>
               </div>
             </form>
           </CardContent>
         </Card>
-
-        {/* Additional Info */}
-        <div className="mt-6 text-center">
-          <p className="text-xs text-slate-500">
-            Создавая аккаунт, вы соглашаетесь с условиями использования платформы
-          </p>
-        </div>
       </div>
     </div>
   );

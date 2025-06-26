@@ -8,6 +8,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
 import { Eye, EyeOff, FileText } from 'lucide-react';
 import ApiService from '@/services/api';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface FormData {
   email: string;
@@ -20,6 +21,7 @@ interface FormErrors {
 }
 
 const Login = () => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState<FormData>({
     email: '',
     password: ''
@@ -34,13 +36,13 @@ const Login = () => {
     const newErrors: FormErrors = {};
 
     if (!formData.email.trim()) {
-      newErrors.email = 'Email обязателен';
+      newErrors.email = t('login.required');
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Неверный формат email';
+      newErrors.email = t('login.invalidEmail');
     }
 
     if (!formData.password) {
-      newErrors.password = 'Пароль обязателен';
+      newErrors.password = t('login.passwordRequired');
     }
 
     setErrors(newErrors);
@@ -73,8 +75,8 @@ const Login = () => {
       );
       
       toast({
-        title: "Успешный вход",
-        description: `Добро пожаловать, ${response.user.firstName}!`,
+        title: t('login.success'),
+        description: t('login.welcome', { name: response.user.firstName }),
       });
 
       // Navigate to dashboard after successful login
@@ -83,16 +85,16 @@ const Login = () => {
     } catch (error: any) {
       console.error('Login failed:', error);
       
-      const errorMessage = error.message || 'Произошла ошибка при входе';
+      const errorMessage = error.message || t('login.error');
       
       if (errorMessage.includes('Invalid credentials')) {
         setErrors({ 
-          email: 'Неверный email или пароль',
-          password: 'Неверный email или пароль'
+          email: t('login.invalid'),
+          password: t('login.invalid')
         });
       } else {
         toast({
-          title: "Ошибка входа",
+          title: t('login.error'),
           description: errorMessage,
           variant: "destructive",
         });
@@ -109,9 +111,9 @@ const Login = () => {
           <CardHeader className="text-center bg-gradient-to-r from-blue-900 to-blue-800 text-white rounded-t-lg">
             <div className="flex items-center justify-center space-x-3 mb-2">
               <FileText className="w-8 h-8" />
-              <CardTitle className="text-2xl font-bold">Вход в систему</CardTitle>
+              <CardTitle className="text-2xl font-bold">{t('login.title')}</CardTitle>
             </div>
-            <p className="text-blue-100">Платформа тестирования</p>
+            <p className="text-blue-100">{t('login.platform')}</p>
           </CardHeader>
           
           <CardContent className="p-8">
@@ -119,7 +121,7 @@ const Login = () => {
               {/* Email */}
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-slate-700">
-                  Email
+                  {t('login.email')}
                 </Label>
                 <Input
                   id="email"
@@ -142,7 +144,7 @@ const Login = () => {
               {/* Password */}
               <div className="space-y-2">
                 <Label htmlFor="password" className="text-slate-700">
-                  Пароль
+                  {t('login.password')}
                 </Label>
                 <div className="relative">
                   <Input
@@ -185,10 +187,10 @@ const Login = () => {
                 {isLoading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Вход...
+                    {t('login.loading')}
                   </>
                 ) : (
-                  'Войти'
+                  t('login.button')
                 )}
               </Button>
 
@@ -200,19 +202,19 @@ const Login = () => {
                   className="text-slate-600 hover:text-blue-800 text-sm"
                   disabled={isLoading}
                 >
-                  Забыли пароль?
+                  {t('login.forgot')}
                 </Button>
               </div>
 
               {/* Register Link */}
               <div className="text-center pt-4 border-t border-slate-200">
                 <p className="text-sm text-slate-600">
-                  Нет аккаунта?{' '}
+                  {t('login.noAccount')} 
                   <Link 
                     to="/register" 
                     className="text-blue-600 hover:text-blue-800 font-medium"
                   >
-                    Зарегистрироваться
+                    {t('login.register')}
                   </Link>
                 </p>
               </div>
@@ -222,10 +224,10 @@ const Login = () => {
 
         {/* Demo Credentials */}
         <div className="mt-6 p-4 bg-slate-100 rounded-lg">
-          <h4 className="text-sm font-semibold text-slate-700 mb-2">Демо-доступ:</h4>
+          <h4 className="text-sm font-semibold text-slate-700 mb-2">{t('login.demo')}</h4>
           <div className="text-xs text-slate-600 space-y-1">
-            <p><strong>Email:</strong> demo@coach.com</p>
-            <p><strong>Пароль:</strong> Demo123!</p>
+            <p><strong>{t('login.demoEmail')}</strong> {t('login.demoEmailValue')}</p>
+            <p><strong>{t('login.demoPassword')}</strong> {t('login.demoPasswordValue')}</p>
           </div>
         </div>
       </div>

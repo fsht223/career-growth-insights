@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
 import ApiService from '@/services/api';
 import CreateTestDialog from '@/components/CreateTestDialog';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface Test {
   id: string;
@@ -37,6 +38,7 @@ interface Report {
 }
 
 const Dashboard = () => {
+  const { t, language } = useTranslation();
   const [activeTab, setActiveTab] = useState('tests');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [tests, setTests] = useState<Test[]>([]);
@@ -69,8 +71,8 @@ const Dashboard = () => {
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
       toast({
-        title: "Ошибка загрузки",
-        description: "Не удалось загрузить данные панели",
+        title: t('dashboard.errorLoading') || 'Ошибка загрузки',
+        description: t('dashboard.errorLoadingDesc') || 'Не удалось загрузить данные панели',
         variant: "destructive",
       });
     } finally {
@@ -83,16 +85,16 @@ const Dashboard = () => {
     await loadDashboardData();
     setRefreshing(false);
     toast({
-      title: "Данные обновлены",
-      description: "Информация успешно обновлена",
+      title: t('dashboard.refresh'),
+      description: t('dashboard.dataUpdated') || 'Информация успешно обновлена',
     });
   };
 
   const handleLogout = () => {
     ApiService.logout();
     toast({
-      title: "Выход выполнен",
-      description: "До свидания!",
+      title: t('dashboard.logout'),
+      description: t('dashboard.goodbye') || 'До свидания!',
     });
     navigate('/login');
   };
@@ -100,8 +102,8 @@ const Dashboard = () => {
   const copyTestLink = (link: string) => {
     navigator.clipboard.writeText(link);
     toast({
-      title: "Ссылка скопирована!",
-      description: "Ссылка на тест скопирована в буфер обмена",
+      title: t('dashboard.copyLink'),
+      description: t('dashboard.linkCopied') || 'Ссылка на тест скопирована в буфер обмена',
     });
   };
 
@@ -110,13 +112,13 @@ const Dashboard = () => {
       await ApiService.deleteTest(testId);
       setTests(prev => prev.filter(test => test.id !== testId));
       toast({
-        title: "Тест удален",
-        description: "Тест успешно удален из системы",
+        title: t('dashboard.delete'),
+        description: t('dashboard.testDeleted') || 'Тест успешно удален из системы',
       });
     } catch (error) {
       toast({
-        title: "Ошибка удаления",
-        description: "Не удалось удалить тест",
+        title: t('dashboard.deleteError') || 'Ошибка удаления',
+        description: t('dashboard.deleteErrorDesc') || 'Не удалось удалить тест',
         variant: "destructive",
       });
     }
@@ -129,19 +131,19 @@ const Dashboard = () => {
     if (completedCount > 0) {
       return (
         <Badge className="bg-green-100 text-green-800">
-          Завершено: {completedCount}
+          {t('dashboard.status.completed', { count: completedCount })}
         </Badge>
       );
     } else if (registeredCount > 0) {
       return (
         <Badge className="bg-yellow-100 text-yellow-800">
-          В процессе: {registeredCount}
+          {t('dashboard.status.inProgress', { count: registeredCount })}
         </Badge>
       );
     } else {
       return (
         <Badge className="bg-slate-100 text-slate-800">
-          Создан
+          {t('dashboard.status.created')}
         </Badge>
       );
     }
@@ -149,15 +151,15 @@ const Dashboard = () => {
 
   const getLanguageName = (code: string) => {
     const languages: Record<string, string> = {
-      'ru': 'Русский',
+      'ru': t('dashboard.language.ru'),
       'kz': 'Казахский', 
-      'en': 'English'
+      'en': t('dashboard.language.en')
     };
     return languages[code] || code;
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('ru-RU', {
+    return new Date(dateString).toLocaleDateString(language === 'ru' ? 'ru-RU' : 'en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -182,7 +184,7 @@ const Dashboard = () => {
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-900 mx-auto mb-4"></div>
-          <p className="text-slate-600">Загрузка панели...</p>
+          <p className="text-slate-600">{t('dashboard.loading') || 'Загрузка панели...'}</p>
         </div>
       </div>
     );
@@ -199,9 +201,9 @@ const Dashboard = () => {
                 <FileText className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-slate-800">Панель коуча</h1>
+                <h1 className="text-xl font-bold text-slate-800">{t('dashboard.title')}</h1>
                 <p className="text-sm text-slate-600">
-                  Добро пожаловать, {currentUser?.firstName} {currentUser?.lastName}
+                  {t('dashboard.welcome', { name: `${currentUser?.firstName || ''} ${currentUser?.lastName || ''}` })}
                 </p>
               </div>
             </div>
@@ -213,7 +215,7 @@ const Dashboard = () => {
                 size="sm"
               >
                 <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-                Обновить
+                {t('dashboard.refresh')}
               </Button>
               <Button
                 onClick={handleLogout}
@@ -221,7 +223,7 @@ const Dashboard = () => {
                 className="text-slate-600 hover:text-red-600"
               >
                 <LogOut className="w-4 h-4 mr-2" />
-                Выйти
+                {t('dashboard.logout')}
               </Button>
             </div>
           </div>
@@ -238,7 +240,7 @@ const Dashboard = () => {
                   <FileText className="w-8 h-8 text-blue-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-slate-600">Всего тестов</p>
+                  <p className="text-sm font-medium text-slate-600">{t('dashboard.stats.totalTests')}</p>
                   <p className="text-2xl font-semibold text-slate-900">{statsData.totalTests}</p>
                 </div>
               </div>
@@ -252,7 +254,7 @@ const Dashboard = () => {
                   <BarChart3 className="w-8 h-8 text-green-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-slate-600">Завершено</p>
+                  <p className="text-sm font-medium text-slate-600">{t('dashboard.stats.completedTests')}</p>
                   <p className="text-2xl font-semibold text-slate-900">{statsData.completedTests}</p>
                 </div>
               </div>
@@ -263,10 +265,10 @@ const Dashboard = () => {
             <CardContent className="p-6">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <RefreshCw className="w-8 h-8 text-yellow-600" />
+                  <Users className="w-8 h-8 text-yellow-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-slate-600">В процессе</p>
+                  <p className="text-sm font-medium text-slate-600">{t('dashboard.stats.activeTests')}</p>
                   <p className="text-2xl font-semibold text-slate-900">{statsData.activeTests}</p>
                 </div>
               </div>
@@ -277,10 +279,10 @@ const Dashboard = () => {
             <CardContent className="p-6">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <Users className="w-8 h-8 text-purple-600" />
+                  <FileText className="w-8 h-8 text-indigo-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-slate-600">Участников</p>
+                  <p className="text-sm font-medium text-slate-600">{t('dashboard.stats.participants')}</p>
                   <p className="text-2xl font-semibold text-slate-900">{statsData.totalParticipants}</p>
                 </div>
               </div>

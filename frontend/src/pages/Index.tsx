@@ -1,6 +1,8 @@
 import React from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const Index = () => {
+  const { t } = useTranslation();
   console.log('Index component rendered');
 
   return (
@@ -19,9 +21,9 @@ const Index = () => {
         boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
         textAlign: 'center'
       }}>
-        <h1 style={{ color: '#1e40af', marginBottom: '1rem' }}>Index Page Working!</h1>
-        <p style={{ color: '#6b7280' }}>This is the Index page at /</p>
-        <p style={{ color: '#6b7280', marginTop: '1rem' }}>If you can see this, the routing and page components are working.</p>
+        <h1 style={{ color: '#1e40af', marginBottom: '1rem' }}>{t('index.title')}</h1>
+        <p style={{ color: '#6b7280' }}>{t('index.text')}</p>
+        <p style={{ color: '#6b7280', marginTop: '1rem' }}>{t('index.routing')}</p>
       </div>
     </div>
   );

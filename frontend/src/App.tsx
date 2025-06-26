@@ -1,6 +1,8 @@
 // src/App.tsx
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { LanguageProvider } from '@/context/LanguageContext';
+import LanguageSwitch from '@/components/common/LanguageSwitch';
 
 // Pages
 import Index from '@/pages/Index';
@@ -53,28 +55,34 @@ const App: React.FC = () => {
   console.log('App component rendered');
   
   return (
-    <Router>
-      <div className="App">
-        <Routes>
-          {/* Test route */}
-          <Route path="/test" element={<SimpleTest />} />
-          
-          {/* Public Routes */}
-          <Route path="/" element={<Index />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/dashboard" element={<Dashboard />} />
+    <LanguageProvider>
+      <Router>
+        <div className="App">
+          {/* Global Language Switch Button */}
+          <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 1000 }}>
+            <LanguageSwitch />
+          </div>
+          <Routes>
+            {/* Test route */}
+            <Route path="/test" element={<SimpleTest />} />
+            
+            {/* Public Routes */}
+            <Route path="/" element={<Index />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/dashboard" element={<Dashboard />} />
 
-          {/* Test Taking Routes */}
-          <Route path="/test/:testId" element={<TestLanding />} />
-          <Route path="/test/:testId/questions" element={<TestQuestions />} />
-          <Route path="/test/:testId/results" element={<TestResults />} />
+            {/* Test Taking Routes */}
+            <Route path="/test/:testId" element={<TestLanding />} />
+            <Route path="/test/:testId/questions" element={<TestQuestions />} />
+            <Route path="/test/:testId/results" element={<TestResults />} />
 
-          {/* Catch all route */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </div>
-    </Router>
+            {/* Catch all route */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </div>
+      </Router>
+    </LanguageProvider>
   );
 };
 
