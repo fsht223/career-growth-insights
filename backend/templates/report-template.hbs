@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Результаты теста мотивации</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(135deg, #f8fafc 0%, #e0e7ff 100%);
+      margin: 0;
+      padding: 0;
+      color: #1e293b;
+    }
+    .container {
+      max-width: 900px;
+      margin: 40px auto;
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 4px 32px 0 rgba(30,41,59,0.08);
+      padding: 40px 32px 32px 32px;
+    }
+    h1, h2, h3 {
+      color: #1e293b;
+      margin-top: 0;
+    }
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+    h2 {
+      font-size: 1.3rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+    .section {
+      margin-bottom: 36px;
+    }
+    .info-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 18px;
+    }
+    .info-table td {
+      padding: 6px 10px;
+      font-size: 1rem;
+    }
+    .profile-scores ul {
+      display: flex;
+      gap: 32px;
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 500;
+    }
+    .motivation-bars {
+      margin-top: 18px;
+    }
+    .motivation-bar {
+      margin-bottom: 22px;
+    }
+    .bar-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 1rem;
+      margin-bottom: 2px;
+    }
+    .bar-label .starred {
+      color: #f59e42;
+      font-size: 1.1em;
+      margin-left: 6px;
+    }
+    .bar-container {
+      position: relative;
+      background: #e5e7eb;
+      border-radius: 999px;
+      height: 22px;
+      width: 100%;
+      overflow: hidden;
+    }
+    .bar {
+      height: 22px;
+      border-radius: 999px;
+      transition: width 0.5s;
+      position: absolute;
+      left: 0;
+      top: 0;
+    }
+    .bar-green { background: #22c55e; }
+    .bar-red { background: #ef4444; }
+    .bar-bench { background: #6366f1; }
+    .benchmark-line {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      width: 3px;
+      height: 100%;
+      background: #334155;
+      z-index: 2;
+      border-radius: 2px;
+      box-shadow: 0 0 2px #334155;
+    }
+    .bar-percent-label {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 0.95rem;
+      color: #334155;
+      font-weight: 600;
+      z-index: 3;
+    }
+    .legend {
+      background: #f1f5f9;
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin-top: 24px;
+      font-size: 0.98rem;
+      color: #334155;
+    }
+    .legend span { margin-right: 18px; }
+    .top-motivators ol {
+      padding-left: 18px;
+      font-size: 1.05rem;
+    }
+    .dev-areas-list, .strengths-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .dev-area-card {
+      background: #fee2e2;
+      color: #b91c1c;
+      border-radius: 10px;
+      padding: 10px 18px;
+      font-weight: 500;
+      min-width: 160px;
+      text-align: center;
+    }
+    .strength-card {
+      background: #dcfce7;
+      color: #166534;
+      border-radius: 10px;
+      padding: 10px 18px;
+      font-weight: 500;
+      min-width: 160px;
+      text-align: center;
+    }
+    .split-section, .consistency-section, .awareness-section, .reasoning-section {
+      margin-bottom: 24px;
+    }
+    .split-labels, .reasoning-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 1rem;
+      margin-bottom: 4px;
+    }
+    .split-bar, .reasoning-bar {
+      width: 100%;
+      height: 18px;
+      background: #e5e7eb;
+      border-radius: 999px;
+      display: flex;
+      overflow: hidden;
+      margin-bottom: 6px;
+    }
+    .split-inner { background: #2563eb; height: 100%; }
+    .split-outer { background: #f59e42; height: 100%; }
+    .reasoning-intuition { background: #f59e42; height: 100%; }
+    .reasoning-logical { background: #6366f1; height: 100%; }
+    .footer {
+      margin-top: 48px;
+      text-align: center;
+      color: #64748b;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Результаты теста мотивации</h1>
+    <div class="section">
+      <table class="info-table">
+        <tr><td>Имя:</td><td>{{userName}}</td></tr>
+        <tr><td>Email:</td><td>{{userEmail}}</td></tr>
+        <tr><td>Профессия:</td><td>{{profession}}</td></tr>
+        <tr><td>Дата теста:</td><td>{{testDate}}</td></tr>
+      </table>
+    </div>
+
+    <div class="section profile-scores">
+      <h2>Профиль</h2>
+      <ul>
+        <li>Power: {{profileScores.power}}</li>
+        <li>Affiliation: {{profileScores.affiliation}}</li>
+        <li>Achievement: {{profileScores.achievement}}</li>
+      </ul>
+    </div>
+
+    <div class="section motivation-bars">
+      <h2>Мотивационные кнопки</h2>
+      {{#each progressBars}}
+        <div class="motivation-bar">
+          <div class="bar-label">
+            <span>{{name}} {{#if isStarred}}<span class="starred">★</span>{{/if}}</span>
+            <span><b>{{percentage}}%</b></span>
+          </div>
+          <div class="bar-container">
+            <div class="bar {{#if (or (lt percentage 90) (gt percentage 110))}}bar-red{{else}}bar-green{{/if}}" style="width: {{divide percentage 2}}%;"></div>
+            <div class="benchmark-line"></div>
+            <span class="bar-percent-label">100%</span>
+          </div>
+        </div>
+      {{/each}}
+      <div class="legend">
+        <span><b>★</b> — выбранные мотивационные факторы</span>
+        <span><span style="display:inline-block;width:18px;height:8px;background:#22c55e;border-radius:4px;"></span> 90-110% — соответствует эталону</span>
+        <span><span style="display:inline-block;width:18px;height:8px;background:#ef4444;border-radius:4px;"></span> &lt;90% или &gt;110% — область развития</span>
+        <span><span style="display:inline-block;width:3px;height:18px;background:#334155;border-radius:2px;vertical-align:middle;"></span> Benchmark = 100%</span>
+        <span>Max: 200%</span>
+      </div>
+    </div>
+
+    <div class="section top-motivators">
+      <h2>Топ-3 мотиватора</h2>
+      <ol>
+        {{#each topMotivators}}
+          <li><b>{{name}}</b> ({{percentage}}%) — {{description}}</li>
+        {{/each}}
+      </ol>
+    </div>
+
+    <div class="section strengths">
+      <h2>Сильные стороны</h2>
+      <ul class="strengths-list">
+        {{#if strengths}}
+          {{#each strengths}}
+            <li class="strength-card">{{this}}</li>
+          {{/each}}
+        {{else}}
+          <li>Нет выраженных сильных сторон</li>
+        {{/if}}
+      </ul>
+    </div>
+
+    <div class="section development-areas">
+      <h2>Зоны развития</h2>
+      <ul class="dev-areas-list">
+        {{#if developmentAreas}}
+          {{#each developmentAreas}}
+            <li class="dev-area-card">{{name}} ({{percentage}}%)</li>
+          {{/each}}
+        {{else}}
+          <li>Нет выраженных зон развития</li>
+        {{/if}}
+      </ul>
+    </div>
+
+    <div class="section split-section">
+      <h2>Внутренняя / Внешняя мотивация</h2>
+      <div class="split-labels">
+        <span>Внутренняя</span>
+        <span>Внешняя</span>
+      </div>
+      <div class="split-bar">
+        <div class="split-inner" style="width: {{motivationSplit.inner}}%"></div>
+        <div class="split-outer" style="width: {{motivationSplit.outer}}%"></div>
+      </div>
+      <div>{{motivationSplit.inner}}% / {{motivationSplit.outer}}%</div>
+    </div>
+
+    <div class="section consistency-section">
+      <h2>Согласованность</h2>
+      <div style="font-size:1.3rem;font-weight:600;color:#2563eb;">{{consistency}}%</div>
+    </div>
+
+    <div class="section awareness-section">
+      <h2>Осознанность</h2>
+      <div style="font-size:1.3rem;font-weight:600;color:#2563eb;">{{awareness}}%</div>
+    </div>
+
+    <div class="section reasoning-section">
+      <h2>Тип мышления</h2>
+      <div class="reasoning-labels">
+        <span>Интуиция</span>
+        <span>Логика</span>
+      </div>
+      <div class="reasoning-bar">
+        <div class="reasoning-intuition" style="width: {{reasoning.intuition}}%"></div>
+        <div class="reasoning-logical" style="width: {{reasoning.logical}}%"></div>
+      </div>
+      <div>{{reasoning.intuition}}% / {{reasoning.logical}}%</div>
+    </div>
+
+    {{#if goldenLine}}
+      <div class="section golden-line">
+        <h2>Золотая линия</h2>
+        <blockquote style="font-size:1.1rem;color:#6366f1;border-left:4px solid #6366f1;padding-left:12px;">{{goldenLine}}</blockquote>
+      </div>
+    {{/if}}
+
+    <div class="footer">
+      © {{testDate}} Career Growth Insights
+    </div>
+  </div>
+</body>
+</html>

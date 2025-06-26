@@ -1,6 +1,7 @@
 const pool = require('../db/pool');
 const path = require('path');
 const fs = require('fs');
+const pdfService = require('../services/pdfService');
 
 const getReports = async (req, res) => {
   const client = await pool.connect();
@@ -159,4 +160,39 @@ const downloadPDF = async (req, res) => {
   }
 };
 
-module.exports = { getReports, getReport, getReportStatus, downloadPDF };
+// TEMPORARY: Generate PDF for an existing resultId for testing
+const testGeneratePDF = async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { id } = req.params;
+    const result = await client.query('SELECT * FROM test_results WHERE id = $1', [id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Report not found' });
+    }
+    const report = result.rows[0];
+    // Parse results JSON
+    const results = typeof report.results === 'string' ? JSON.parse(report.results) : report.results;
+    // Get test info
+    const testResult = await client.query('SELECT * FROM tests WHERE id = $1', [report.test_id]);
+    const test = testResult.rows[0];
+    // Fake userInfo from report
+    const userInfo = {
+      firstName: report.testee_name?.split(' ')[0] || '',
+      lastName: report.testee_name?.split(' ')[1] || '',
+      email: report.testee_email,
+      profession: report.profession
+    };
+    // Generate PDF
+    const pdfBuffer = await pdfService.generateReport({ results }, test, userInfo);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="test-report-${id}.pdf"`);
+    res.send(pdfBuffer);
+  } catch (error) {
+    console.error('Test PDF generation error:', error);
+    res.status(500).json({ error: 'Failed to generate test PDF' });
+  } finally {
+    client.release();
+  }
+};
+
+module.exports = { getReports, getReport, getReportStatus, downloadPDF, testGeneratePDF };

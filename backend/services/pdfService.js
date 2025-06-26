@@ -4,6 +4,12 @@ const handlebars = require('handlebars');
 const fs = require('fs').promises;
 const path = require('path');
 
+// Register helpers for PDF template
+handlebars.registerHelper('lt', function(a, b) { return a < b; });
+handlebars.registerHelper('gt', function(a, b) { return a > b; });
+handlebars.registerHelper('or', function(a, b) { return a || b; });
+handlebars.registerHelper('divide', function(a, b) { return (b !== 0) ? (a / b) : 0; });
+
 class PDFService {
   constructor() {
     this.browser = null;
@@ -74,8 +80,13 @@ class PDFService {
 
     // Process results for template
     const processedResults = this.processResultsForTemplate(testResult, testInfo, userInfo);
-    
-    return compiledTemplate(processedResults);
+    console.log('=== PDF DEBUG: processedResults ===');
+    console.dir(processedResults, { depth: 5 });
+
+    const html = compiledTemplate(processedResults);
+    console.log('=== PDF DEBUG: generated HTML ===');
+    console.log(html);
+    return html;
   }
 
   processResultsForTemplate(testResult, testInfo, userInfo) {

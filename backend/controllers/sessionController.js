@@ -120,6 +120,15 @@ const saveAnswer = async (req, res) => {
     const { id: testId } = req.params;
     const { sessionId, questionId, answer, motivationalSelection } = req.body;
 
+    // ===== ADD THIS DEBUG CODE =====
+    console.log('\n=== SAVE ANSWER DEBUG ===');
+    console.log('Question ID:', questionId);
+    console.log('Request body:', JSON.stringify(req.body, null, 2));
+    console.log('Answer:', answer);
+    console.log('Motivational Selection:', motivationalSelection);
+    console.log('Motivational Selection type:', typeof motivationalSelection);
+    console.log('Is motivationalSelection array?:', Array.isArray(motivationalSelection));
+    // ===== END DEBUG CODE =====
     // Get current session
     const sessionResult = await client.query(
       'SELECT * FROM test_sessions WHERE session_id = $1 AND test_id = $2',
@@ -504,8 +513,33 @@ const calculateTestResults = (session, test) => {
 
   // Starred items from Q40
   let starredItems = [];
-  if (session.motivational_selection && Array.isArray(session.motivational_selection)) {
-    starredItems = session.motivational_selection;
+  try {
+    if (session.motivational_selection) {
+      // Handle both cases: already parsed JSON and string JSON
+      if (Array.isArray(session.motivational_selection)) {
+        starredItems = session.motivational_selection;
+      } else if (typeof session.motivational_selection === 'string') {
+        starredItems = JSON.parse(session.motivational_selection);
+      } else if (typeof session.motivational_selection === 'object') {
+        // In case PostgreSQL returns it as an object, check if it has array-like properties
+        starredItems = Array.isArray(session.motivational_selection) ? session.motivational_selection : [];
+      }
+    }
+    
+    // Ensure starredItems is always an array
+    if (!Array.isArray(starredItems)) {
+      starredItems = [];
+    }
+    
+    console.log('=== STARRED ITEMS DEBUG ===');
+    console.log('Raw motivational_selection:', session.motivational_selection);
+    console.log('Type:', typeof session.motivational_selection);
+    console.log('Parsed starredItems:', starredItems);
+    console.log('StarredItems length:', starredItems.length);
+    
+  } catch (error) {
+    console.error('Error parsing motivational_selection:', error);
+    starredItems = [];
   }
 
   // Profile averages

@@ -10,5 +10,6 @@ router.get('/', authenticateToken, reportController.getReports);
 router.get('/:id', reportController.getReport);
 router.get('/:id/status', reportController.getReportStatus);
 router.get('/:id/pdf', reportController.downloadPDF);
+router.get('/:id/test-pdf', reportController.testGeneratePDF);
 
 module.exports = router;
