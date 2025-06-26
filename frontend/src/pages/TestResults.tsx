@@ -1,9 +1,8 @@
-// src/pages/TestResults.tsx
+// src/pages/TestResults.tsx - Consistent styling version
 import React, { useState, useEffect } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import { Download, Mail, Star, Award, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import ApiService from '@/services/api';
@@ -25,7 +24,7 @@ const TestResults = () => {
     let resultId = location.state?.resultId || localStorage.getItem('lastResultId');
     if (resultId) {
       ApiService.getReport(resultId).then(report => {
-        console.log('Fetched report:', report); // Debug
+        console.log('Fetched report:', report);
         setTestResults(report.results);
         setPdfStatus(report.pdfStatus || 'generating');
         setPdfUrl(report.pdfUrl || '');
@@ -49,7 +48,6 @@ const TestResults = () => {
       
       const blob = await ApiService.downloadPDF(resultId);
       
-      // Create download link
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -93,26 +91,32 @@ const TestResults = () => {
     });
   };
 
-  // Transform testResults into an array for rendering
+  // Transform and sort motivation buttons by percentage (highest to lowest)
   const motivationButtons = testResults && testResults.groupScores
-    ? Object.keys(testResults.groupScores).map((btn) => ({
-        name: btn,
-        score: testResults.groupScores[btn],
-        benchmark: testResults.goldenLine[btn] || 1,
-        percentage: testResults.percentages[btn],
-        isStarred: testResults.starredItems && testResults.starredItems.includes(btn)
-      }))
+    ? Object.keys(testResults.groupScores)
+        .map((btn) => ({
+          name: btn,
+          score: testResults.groupScores[btn],
+          benchmark: testResults.goldenLine[btn] || 1,
+          percentage: testResults.percentages[btn] || 0,
+          isStarred: testResults.starredItems && testResults.starredItems.includes(btn)
+        }))
+        .sort((a, b) => b.percentage - a.percentage) // Sort by percentage descending
     : [];
 
-  const getScoreColor = (score: number, benchmark: number) => {
-    const percentage = (score / benchmark) * 100;
+  const getStatusColor = (percentage: number) => {
     if (percentage < 90) return "text-red-600";
     if (percentage > 110) return "text-red-600"; 
     return "text-green-600";
   };
 
-  const getProgressColor = (score: number, benchmark: number) => {
-    const percentage = (score / benchmark) * 100;
+  const getStatusText = (percentage: number) => {
+    if (percentage < 90) return "Potential development area";
+    if (percentage > 110) return "Potential development area";
+    return "Aligned with benchmark";
+  };
+
+  const getBarColor = (percentage: number) => {
     if (percentage < 90) return "bg-red-500";
     if (percentage > 110) return "bg-red-500";
     return "bg-green-500";
@@ -148,7 +152,6 @@ const TestResults = () => {
   };
 
   if (!testResults) {
-    console.log('userData:', userData, 'testResults:', testResults); // Debug
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
@@ -159,7 +162,6 @@ const TestResults = () => {
     );
   }
 
-  // Fallbacks for userData fields
   const firstName = userData?.firstName || testResults.testeeName?.split(' ')[0] || 'Имя';
   const lastName = userData?.lastName || testResults.testeeName?.split(' ')[1] || '';
   const profession = userData?.profession || testResults.profession || 'Профессия';
@@ -221,59 +223,72 @@ const TestResults = () => {
           </CardContent>
         </Card>
 
-        {/* Results Chart */}
+        {/* Results Chart - Main Section */}
         <Card className="mb-8 shadow-xl border-0">
           <CardHeader className="bg-gradient-to-r from-blue-900 to-blue-800 text-white rounded-t-lg">
             <CardTitle className="text-xl text-center">Профиль компетенций</CardTitle>
           </CardHeader>
           <CardContent className="p-8">
+            {/* Single Benchmark label at the top */}
+            <div className="text-center">
+              <span className="text-m font-medium text-slate-800">Benchmark</span>
+            </div>
             <div className="space-y-6">
               {motivationButtons.map((result, index) => (
-                <div key={index} className="space-y-2">
+                <div key={index} className="space-y-3">
+                  {/* Header with name, star, and percentage */}
                   <div className="flex justify-between items-center">
                     <div className="flex items-center space-x-2">
                       <span className="font-medium text-slate-800">{result.name}</span>
                       {result.isStarred && <Star className="w-4 h-4 text-yellow-500 fill-current" />}
                     </div>
                     <div className="text-right">
-                      <span className={`font-bold ${getScoreColor(result.score, result.benchmark)}`}>
+                      <span className={`font-bold text-lg ${getStatusColor(result.percentage)}`}>
                         {Math.round(result.percentage)}%
                       </span>
                       <div className="text-xs text-slate-500">
-                        {result.score}/{result.benchmark}
+                        {result.score}/{Math.round(result.benchmark)}
                       </div>
                     </div>
                   </div>
-                  <div className="relative">
-                    <Progress 
-                      value={Math.min(Number(result.percentage), 200)} 
-                      className="h-4 bg-slate-200"
-                    />
+
+                  {/* Progress bar with proper scaling */}
+                  <div className="relative h-6 bg-slate-200 rounded-full overflow-hidden">
+                    {/* Progress fill */}
                     <div 
-                      className={`absolute top-0 left-0 h-4 rounded-full transition-all ${getProgressColor(result.score, result.benchmark)}`}
-                      style={{ width: `${Math.min(Number(result.percentage), 200)}%` }}
+                      className={`absolute top-0 left-0 h-full rounded-full transition-all duration-500 ${getBarColor(result.percentage)}`}
+                      style={{ 
+                        width: `${Math.min(Math.max(result.percentage, 0), 200) / 2}%` // Scale to 200% max
+                      }}
                     />
-                    {/* Benchmark line at 100% */}
+                    
+                    {/* Benchmark line at 100% (50% of container since we scale to 200%) - Made more prominent */}
                     <div 
-                      className="absolute top-0 h-4 w-0.5 bg-slate-800"
-                      style={{ left: '100%' }}
+                      className="absolute top-0 h-full w-0.5 bg-zinc-700 z-10 shadow-sm"
+                      style={{ left: 'calc(50% - 2px)' }}
                     />
                   </div>
-                  <div className="flex justify-between text-xs text-slate-500">
-                    <span>
-                      {result.percentage < 90 ? 'Potential development area' : 
-                        result.percentage > 110 ? 'Potential development area' : 
-                        'Aligned with benchmark'}
+
+                  {/* Status text with 100% indicator */}
+                  <div className="flex justify-between text-sm">
+                    <span className={getStatusColor(result.percentage)}>
+                      {getStatusText(result.percentage)}
                     </span>
-                    <span>Benchmark: 100%</span>
+                    <div className="flex space-x-4 text-slate-500">
+                      <span style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>
+                        100%
+                      </span>
+                      <span>Max: 200%</span>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
 
+            {/* Legend */}
             <div className="mt-8 p-4 bg-slate-50 rounded-lg">
-              <h3 className="font-semibold text-slate-800 mb-2">Легенда:</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+              <h3 className="font-semibold text-slate-800 mb-3">Легенда:</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
                 <div className="flex items-center space-x-2">
                   <Star className="w-4 h-4 text-yellow-500 fill-current" />
                   <span>Выбранные мотивационные факторы</span>
@@ -286,105 +301,196 @@ const TestResults = () => {
                   <div className="w-4 h-2 bg-red-500 rounded"></div>
                   <span>Область развития (&lt;90% или &gt;110%)</span>
                 </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-1 h-4 bg-slate-900 rounded-sm"></div>
+                  <span>Benchmark = 100%</span>
+                </div>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Profile Averages */}
-        <Card className="mb-8 border-blue-200 bg-blue-50">
-          <CardHeader>
-            <CardTitle className="text-lg text-blue-900">Профили мотивации</CardTitle>
+        {/* Profile Averages - Updated to match main section style */}
+        <Card className="mb-8 shadow-xl border-0">
+          <CardHeader className="bg-gradient-to-r from-blue-900 to-blue-800 text-white rounded-t-lg">
+            <CardTitle className="text-xl text-center">Профили мотивации</CardTitle>
           </CardHeader>
-          <CardContent className="p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-            {testResults.profileAverages && Object.entries(testResults.profileAverages).map(([profile, value]) => (
-              <div key={profile} className="flex flex-col items-center">
-                <span className="font-semibold text-blue-800">{profile}</span>
-                <span className="text-2xl font-bold">{Math.round(value)}%</span>
-              </div>
-            ))}
+          <CardContent className="p-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {testResults.profileAverages && Object.entries(testResults.profileAverages).map(([profile, value]) => (
+                <div key={profile} className="text-center">
+                  <div className="font-semibold text-slate-800 mb-2">{profile}</div>
+                  <div className="text-3xl font-bold text-blue-900 mb-2">{Math.round(value as number)}%</div>
+                  <div className="w-full bg-slate-200 rounded-full h-2">
+                    <div 
+                      className="bg-blue-600 h-2 rounded-full transition-all duration-500"
+                      style={{ width: `${Math.min(value as number, 100)}%` }}
+                    ></div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
 
-        {/* Consistency, Awareness, Inner/Outer, Reasoning */}
+        {/* Additional metrics - Updated styling */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-          <Card className="border-indigo-200 bg-indigo-50">
-            <CardHeader>
-              <CardTitle className="text-lg text-indigo-900">Согласованность (Consistency)</CardTitle>
+          <Card className="shadow-xl border-0">
+            <CardHeader className="bg-gradient-to-r from-blue-900 to-blue-800 text-white rounded-t-lg">
+              <CardTitle className="text-lg text-center">Согласованность (Consistency)</CardTitle>
             </CardHeader>
-            <CardContent className="p-6 flex flex-col items-center">
-              <span className="text-2xl font-bold">{Math.round(testResults.consistency || 0)}%</span>
-              <span className="text-slate-600 text-sm mt-2">Согласованность ответов на повторяющиеся вопросы</span>
-            </CardContent>
-          </Card>
-          <Card className="border-yellow-200 bg-yellow-50">
-            <CardHeader>
-              <CardTitle className="text-lg text-yellow-900">Awareness Level</CardTitle>
-            </CardHeader>
-            <CardContent className="p-6 flex flex-col items-center">
-              <span className="text-2xl font-bold">{testResults.awarenessLevel || 0}%</span>
-              <span className="text-slate-600 text-sm mt-2">Осознанность выбора мотивации</span>
-            </CardContent>
-          </Card>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-          <Card className="border-green-200 bg-green-50">
-            <CardHeader>
-              <CardTitle className="text-lg text-green-900">Внутренняя/Внешняя мотивация</CardTitle>
-            </CardHeader>
-            <CardContent className="p-6 flex flex-col items-center">
-              <div className="flex flex-col items-center">
-                <span className="font-semibold">Внутренняя: <span className="text-green-800">{Math.round(testResults.innerOuter?.inner || 0)}%</span></span>
-                <span className="font-semibold">Внешняя: <span className="text-green-800">{Math.round(testResults.innerOuter?.outer || 0)}%</span></span>
+            <CardContent className="p-8 text-center">
+              <div className="text-3xl font-bold text-blue-900 mb-2">
+                {Math.round(testResults.consistency || 0)}%
+              </div>
+              <div className="text-slate-600 text-sm mb-4">
+                Согласованность ответов на повторяющиеся вопросы
+              </div>
+              <div className="w-full bg-slate-200 rounded-full h-2">
+                <div 
+                  className="bg-blue-600 h-2 rounded-full transition-all duration-500"
+                  style={{ width: `${Math.min(testResults.consistency || 0, 100)}%` }}
+                ></div>
               </div>
             </CardContent>
           </Card>
-          <Card className="border-purple-200 bg-purple-50">
-            <CardHeader>
-              <CardTitle className="text-lg text-purple-900">Reasoning</CardTitle>
+          
+          <Card className="shadow-xl border-0">
+            <CardHeader className="bg-gradient-to-r from-blue-900 to-blue-800 text-white rounded-t-lg">
+              <CardTitle className="text-lg text-center">Awareness Level</CardTitle>
             </CardHeader>
-            <CardContent className="p-6 flex flex-col items-center">
-              <div className="flex flex-col items-center">
-                <span className="font-semibold">Интуиция: <span className="text-purple-800">{Math.round(testResults.reasoning?.intuition || 0)}%</span></span>
-                <span className="font-semibold">Логика: <span className="text-purple-800">{Math.round(testResults.reasoning?.beingLogical || 0)}%</span></span>
+            <CardContent className="p-8 text-center">
+              <div className="text-3xl font-bold text-blue-900 mb-2">
+                {testResults.awarenessLevel || 0}%
+              </div>
+              <div className="text-slate-600 text-sm mb-4">
+                Осознанность выбора мотивации
+              </div>
+              <div className="w-full bg-slate-200 rounded-full h-2">
+                <div 
+                  className="bg-blue-600 h-2 rounded-full transition-all duration-500"
+                  style={{ width: `${Math.min(testResults.awarenessLevel || 0, 100)}%` }}
+                ></div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Strengths and Development Areas */}
+        {/* Inner/Outer and Reasoning - Updated styling */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-          <Card className="border-green-300 bg-green-50">
-            <CardHeader>
-              <CardTitle className="text-lg text-green-900">Сильные стороны</CardTitle>
+          <Card className="shadow-xl border-0">
+            <CardHeader className="bg-gradient-to-r from-blue-900 to-blue-800 text-white rounded-t-lg">
+              <CardTitle className="text-lg text-center">Внутренняя/Внешняя мотивация</CardTitle>
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent className="p-8">
+              <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-slate-800">Внутренняя</span>
+                  <span className="font-bold text-lg text-blue-900">
+                    {Math.round(testResults.innerOuter?.inner || 0)}%
+                  </span>
+                </div>
+                <div className="w-full bg-slate-200 rounded-full h-2">
+                  <div 
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-500"
+                    style={{ width: `${Math.min(testResults.innerOuter?.inner || 0, 100)}%` }}
+                  ></div>
+                </div>
+                
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-slate-800">Внешняя</span>
+                  <span className="font-bold text-lg text-blue-900">
+                    {Math.round(testResults.innerOuter?.outer || 0)}%
+                  </span>
+                </div>
+                <div className="w-full bg-slate-200 rounded-full h-2">
+                  <div 
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-500"
+                    style={{ width: `${Math.min(testResults.innerOuter?.outer || 0, 100)}%` }}
+                  ></div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="shadow-xl border-0">
+            <CardHeader className="bg-gradient-to-r from-blue-900 to-blue-800 text-white rounded-t-lg">
+              <CardTitle className="text-lg text-center">Reasoning</CardTitle>
+            </CardHeader>
+            <CardContent className="p-8">
+              <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-slate-800">Интуиция</span>
+                  <span className="font-bold text-lg text-blue-900">
+                    {Math.round(testResults.reasoning?.intuition || 0)}%
+                  </span>
+                </div>
+                <div className="w-full bg-slate-200 rounded-full h-2">
+                  <div 
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-500"
+                    style={{ width: `${Math.min(testResults.reasoning?.intuition || 0, 100)}%` }}
+                  ></div>
+                </div>
+                
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-slate-800">Логика</span>
+                  <span className="font-bold text-lg text-blue-900">
+                    {Math.round(testResults.reasoning?.beingLogical || 0)}%
+                  </span>
+                </div>
+                <div className="w-full bg-slate-200 rounded-full h-2">
+                  <div 
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-500"
+                    style={{ width: `${Math.min(testResults.reasoning?.beingLogical || 0, 100)}%` }}
+                  ></div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Strengths and Development Areas - Updated styling */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+          <Card className="shadow-xl border-0">
+            <CardHeader className="bg-gradient-to-r from-green-700 to-green-600 text-white rounded-t-lg">
+              <CardTitle className="text-lg text-center">Сильные стороны</CardTitle>
+            </CardHeader>
+            <CardContent className="p-8">
               {testResults.strengths && testResults.strengths.length > 0 ? (
-                <ul className="list-disc pl-6">
+                <div className="space-y-3">
                   {testResults.strengths.map((btn: string) => (
-                    <li key={btn} className="font-semibold text-green-800">{btn}</li>
+                    <div key={btn} className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
+                      <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                      <span className="font-medium text-green-800">{btn}</span>
+                    </div>
                   ))}
-                </ul>
+                </div>
               ) : (
-                <span className="text-slate-600">Нет выраженных сильных сторон</span>
+                <div className="text-center text-slate-600 py-8">
+                  Нет выраженных сильных сторон
+                </div>
               )}
             </CardContent>
           </Card>
-          <Card className="border-red-300 bg-red-50">
-            <CardHeader>
-              <CardTitle className="text-lg text-red-900">Зоны развития</CardTitle>
+          
+          <Card className="shadow-xl border-0">
+            <CardHeader className="bg-gradient-to-r from-red-700 to-red-600 text-white rounded-t-lg">
+              <CardTitle className="text-lg text-center">Зоны развития</CardTitle>
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent className="p-8">
               {testResults.developmentAreas && testResults.developmentAreas.length > 0 ? (
-                <ul className="list-disc pl-6">
+                <div className="space-y-3">
                   {testResults.developmentAreas.map((area: any) => (
-                    <li key={area.btn} className="font-semibold text-red-800">
-                      {area.btn}: {Math.round(area.percent)}%
-                    </li>
+                    <div key={area.btn} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                      <span className="font-medium text-red-800">{area.btn}</span>
+                      <span className="text-red-600 font-bold">{Math.round(area.percent)}%</span>
+                    </div>
                   ))}
-                </ul>
+                </div>
               ) : (
-                <span className="text-slate-600">Нет выраженных зон развития</span>
+                <div className="text-center text-slate-600 py-8">
+                  Нет выраженных зон развития
+                </div>
               )}
             </CardContent>
           </Card>
