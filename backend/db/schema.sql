@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS test_results (
     completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     report_url TEXT,
     pdf_status VARCHAR(20) DEFAULT 'generating',
-    pdf_path TEXT,
+    pdf_path VARCHAR(255),
     pdf_error TEXT
 );
 

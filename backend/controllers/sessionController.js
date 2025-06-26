@@ -244,8 +244,51 @@ const completeTest = async (req, res) => {
       pdfStatus: 'generating'
     });
 
-    // Trigger PDF generation in background (if PDF service is available)
-    // This would be handled by your PDF service
+    // Trigger PDF generation in background
+    (async () => {
+      const pdfService = require('../services/pdfService');
+      const fs = require('fs').promises;
+      const path = require('path');
+      let pdfStatus = 'generating';
+      let pdfPath = null;
+      let pdfError = null;
+      try {
+        // Prepare info for PDF
+        const testInfo = {
+          projectName: test.project_name,
+          goldenLine: test.golden_line,
+          language: test.language
+        };
+        const userInfo = {
+          firstName: session.first_name,
+          lastName: session.last_name,
+          email: session.email,
+          profession: session.profession
+        };
+        const pdfBuffer = await pdfService.generateReport({ results }, testInfo, userInfo);
+        const uploadsDir = path.join(__dirname, '../uploads');
+        await fs.mkdir(uploadsDir, { recursive: true });
+        pdfPath = path.join(uploadsDir, `${resultId}.pdf`);
+        await fs.writeFile(pdfPath, pdfBuffer);
+        pdfStatus = 'ready';
+        pdfError = null;
+      } catch (err) {
+        pdfStatus = 'failed';
+        pdfError = err.message || 'Unknown PDF generation error';
+        pdfPath = null;
+        console.error('PDF generation error:', err);
+      }
+      // Update test_results with PDF status
+      const client2 = await pool.connect();
+      try {
+        await client2.query(
+          `UPDATE test_results SET pdf_status = $1, pdf_path = $2, pdf_error = $3 WHERE id = $4`,
+          [pdfStatus, pdfPath, pdfError, resultId]
+        );
+      } finally {
+        client2.release();
+      }
+    })();
     
   } catch (error) {
     await client.query('ROLLBACK');
@@ -288,6 +331,15 @@ const getDefaultGoldenLine = () => {
   };
 };
 
+// Profile mappings
+const PROFILE_GROUPS = {
+  Power: ["Intuition", "Success", "Resilience", "Respect", "Influence"],
+  Affiliation: ["Professional Pleasure", "Bringing Happiness", "Social Contact", "Empathy", "Team Spirit", "Recognition", "Social Approval"],
+  Achievement: ["Perfectionism", "Reaching Goals", "Responsibility", "Value", "Efficiency", "Intellectual Discovery", "Being Logical"]
+};
+const INNER_MOTIVATION = ["Intuition", "Professional Pleasure", "Bringing Happiness", "Empathy", "Resilience", "Intellectual Discovery", "Team Spirit"];
+const OUTER_MOTIVATION = ["Perfectionism", "Success", "Reaching Goals", "Recognition", "Social Contact", "Influence", "Responsibility", "Value", "Respect", "Efficiency", "Being Logical", "Social Approval"];
+
 const calculateTestResults = (session, test) => {
   const goldenLines = require('../data/goldenLines');
   let goldenLine = goldenLines.find(gl => gl.profession === test.golden_line);
@@ -302,33 +354,38 @@ const calculateTestResults = (session, test) => {
 
   // Calculate scores from answers (questions 1-39)
   const answers = session.answers || {};
-  Object.entries(answers).forEach(([questionId, answer]) => {
-    const qId = parseInt(questionId);
-    if (qId >= 1 && qId <= 39 && answer && typeof answer === 'object') {
-      // Find all option IDs for this question
-      const question = require('../data/questions').getQuestionById(qId);
-      if (!question) return;
-      // First, second, third choices
-      const firstChoice = question.options.find(opt => opt.id === answer.first);
-      const secondChoice = question.options.find(opt => opt.id === answer.second);
-      // Third is the one not chosen
-      const thirdChoice = question.options.find(opt => opt.id !== answer.first && opt.id !== answer.second);
-      if (firstChoice && groupScores.hasOwnProperty(firstChoice.group)) {
-        groupScores[firstChoice.group] += 3;
-      }
-      if (secondChoice && groupScores.hasOwnProperty(secondChoice.group)) {
-        groupScores[secondChoice.group] += 2;
-      }
-      if (thirdChoice && groupScores.hasOwnProperty(thirdChoice.group)) {
-        groupScores[thirdChoice.group] += 1;
-      }
+  for (let qId = 1; qId <= 39; qId++) {
+    const question = require('../data/questions').getQuestionById(qId);
+    if (!question || !question.options || question.options.length !== 3) continue;
+    const answer = answers[qId];
+    if (answer && answer.first && answer.second) {
+      // Assign 3 to first, 2 to second, 1 to the remaining
+      question.options.forEach(opt => {
+        if (groupScores.hasOwnProperty(opt.group)) {
+          if (opt.id === answer.first) groupScores[opt.group] += 3;
+          else if (opt.id === answer.second) groupScores[opt.group] += 2;
+          else groupScores[opt.group] += 1;
+        }
+      });
+    } else {
+      // If answer is missing or incomplete, assign 1 to all three
+      question.options.forEach(opt => {
+        if (groupScores.hasOwnProperty(opt.group)) {
+          groupScores[opt.group] += 1;
+        }
+      });
     }
-  });
+  }
+
+  // Debug: print sum of all button scores and number of answered questions
+  const totalScore = Object.values(groupScores).reduce((a, b) => a + b, 0);
+  const answeredQuestions = Object.keys(answers).filter(q => parseInt(q) >= 1 && parseInt(q) <= 39).length;
+  console.log('DEBUG: Total button score:', totalScore, '| Answered questions:', answeredQuestions);
 
   // Calculate percentages for each button
   const percentages = {};
   ALL_BUTTONS.forEach(btn => {
-    const goldenValue = goldenLine.values[btn] || 1; // avoid division by zero
+    const goldenValue = goldenLine.values[btn] || 1;
     percentages[btn] = goldenValue ? (groupScores[btn] / goldenValue) * 100 : 0;
   });
 
@@ -338,11 +395,96 @@ const calculateTestResults = (session, test) => {
     starredItems = session.motivational_selection;
   }
 
+  // Profile averages
+  const profileAverages = {};
+  Object.entries(PROFILE_GROUPS).forEach(([profile, btns]) => {
+    const vals = btns.map(btn => percentages[btn] || 0);
+    profileAverages[profile] = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
+  });
+
+  // Consistency (Q1-3 vs Q37-39)
+  const consistencyPairs = [
+    [1, 37], [2, 38], [3, 39]
+  ];
+  const consistencyScores = [];
+  consistencyPairs.forEach(([qA, qB]) => {
+    const ansA = answers[qA];
+    const ansB = answers[qB];
+    if (ansA && ansB) {
+      const qAObj = require('../data/questions').getQuestionById(qA);
+      const qBObj = require('../data/questions').getQuestionById(qB);
+      [0, 1, 2].forEach(idx => {
+        const btnA = qAObj.options[idx].group;
+        const btnB = qBObj.options[idx].group;
+        // Score for each button in both questions
+        let scoreA = 0, scoreB = 0;
+        if (ansA.first === qAObj.options[idx].id) scoreA = 3;
+        else if (ansA.second === qAObj.options[idx].id) scoreA = 2;
+        else scoreA = 1;
+        if (ansB.first === qBObj.options[idx].id) scoreB = 3;
+        else if (ansB.second === qBObj.options[idx].id) scoreB = 2;
+        else scoreB = 1;
+        if (btnA === btnB) {
+          const minV = Math.min(scoreA, scoreB);
+          const maxV = Math.max(scoreA, scoreB);
+          if (maxV > 0) {
+            consistencyScores.push((minV / maxV) * 100);
+          }
+        }
+      });
+    }
+  });
+  const consistency = consistencyScores.length ? consistencyScores.reduce((a, b) => a + b, 0) / consistencyScores.length : 0;
+
+  // Awareness Level
+  let awarenessLevel = 0;
+  if (starredItems.length === 5) {
+    let count = 0;
+    starredItems.forEach(btn => {
+      if ((percentages[btn] || 0) >= 96) count++;
+    });
+    awarenessLevel = count * 20;
+  }
+
+  // Inner/Outer Motivation
+  const totalPoints = Object.values(groupScores).reduce((a, b) => a + b, 0) || 1;
+  const innerPoints = INNER_MOTIVATION.map(btn => groupScores[btn] || 0).reduce((a, b) => a + b, 0);
+  const outerPoints = OUTER_MOTIVATION.map(btn => groupScores[btn] || 0).reduce((a, b) => a + b, 0);
+  const innerOuter = {
+    inner: (innerPoints / totalPoints) * 100,
+    outer: (outerPoints / totalPoints) * 100
+  };
+
+  // Reasoning
+  const intuition = groupScores["Intuition"] || 0;
+  const beingLogical = groupScores["Being Logical"] || 0;
+  const sumReasoning = intuition + beingLogical || 1;
+  const reasoning = {
+    intuition: (intuition / sumReasoning) * 100,
+    beingLogical: (beingLogical / sumReasoning) * 100
+  };
+
+  // Strengths, Boosters, Development Areas (structure only)
+  const strengths = ALL_BUTTONS.filter(btn => (percentages[btn] || 0) >= 100);
+  const boosters = strengths; // For now, same as strengths
+  // Top 5 buttons with largest deviation from 100%
+  const deviations = ALL_BUTTONS.map(btn => ({ btn, dev: Math.abs((percentages[btn] || 0) - 100) }));
+  deviations.sort((a, b) => b.dev - a.dev);
+  const developmentAreas = deviations.slice(0, 5).map(d => ({ btn: d.btn, percent: percentages[d.btn] }));
+
   return {
     groupScores,
     percentages,
     starredItems,
-    goldenLine: goldenLine.values
+    goldenLine: goldenLine.values,
+    profileAverages,
+    consistency,
+    awarenessLevel,
+    innerOuter,
+    reasoning,
+    strengths,
+    boosters,
+    developmentAreas
   };
 };
 

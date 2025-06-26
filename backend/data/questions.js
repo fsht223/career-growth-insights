@@ -1,66 +1,216 @@
 const questions = [
-  {
-    id: 1,
-    text: "Какое из следующих утверждений лучше описывает вас?",
-    options: [
-      { id: "1a", text: "Я обеспечиваю соответствие моей работы высшим стандартам", group: "Perfectionism" },
-      { id: "1b", text: "Я делаю все необходимое для достижения моих целей", group: "Reaching Goals" },
-      { id: "1c", text: "Я придаю значение социальному взаимодействию с коллегами", group: "Social Contact" }
-    ]
-  },
-  {
-    id: 2,
-    text: "Какое из следующих утверждений лучше описывает вас?",
-    options: [
-      { id: "2a", text: "Я основываю свои решения на осязаемых данных", group: "Being Logical" },
-      { id: "2b", text: "Мне нравится помогать тем, кто обращается ко мне с проблемами", group: "Bringing Happiness" },
-      { id: "2c", text: "Я полагаюсь на интуицию при принятии решений", group: "Intuition" }
-    ]
-  },
-  {
-    id: 3,
-    text: "Какое из следующих утверждений лучше описывает вас?",
-    options: [
-      { id: "3a", text: "Конкурентная среда мотивирует меня к совершенству", group: "Success" },
-      { id: "3b", text: "Мне нравится работать с целями", group: "Reaching Goals" },
-      { id: "3c", text: "Я хотел бы, чтобы мои усилия были признаны", group: "Recognition" }
-    ]
-  }
-  // Add more questions up to 36, then repeat 1-3 as 37-39
-];
-
-// Generate remaining questions
-for (let i = 4; i <= 36; i++) {
-  questions.push({
-    id: i,
-    text: `Вопрос ${i}: Какое из следующих утверждений лучше описывает вас?`,
-    options: [
-      { id: `${i}a`, text: `Вариант A для вопроса ${i}`, group: "TestGroup1" },
-      { id: `${i}b`, text: `Вариант B для вопроса ${i}`, group: "TestGroup2" },
-      { id: `${i}c`, text: `Вариант C для вопроса ${i}`, group: "TestGroup3" }
-    ]
-  });
-}
-
-// Add repeat questions (37-39)
-questions.push(...questions.slice(0, 3).map((q, index) => ({
-  ...q,
-  id: 37 + index,
-  isRepeat: true
-})));
-
-// Add motivational selection question
-questions.push({
-  id: 40,
-  text: "Выберите 5 наиболее важных для вас мотивационных факторов",
-  type: "motivational_selection",
-  options: [
+  { id: 1, text: "Какое из следующих утверждений лучше описывает вас?", options: [
+    { id: "1a", text: "Я обеспечиваю соответствие моей работы высшим стандартам.", group: "Perfectionism" },
+    { id: "1b", text: "Я делаю все необходимое для достижения моих целей.", group: "Reaching Goals" },
+    { id: "1c", text: "Я придаю значение социальному взаимодействию с коллегами", group: "Social Contact" }
+  ] },
+  { id: 2, text: "Какое из следующих утверждений лучше описывает вас?", options: [
+    { id: "2a", text: "Я основываю свои решения на осязаемых данных.", group: "Being Logical" },
+    { id: "2b", text: "Мне нравится помогать тем, кто обращается ко мне с проблемами.", group: "Bringing Happiness" },
+    { id: "2c", text: "Я полагаюсь на интуицию при принятии решений.", group: "Intuition" }
+  ] },
+  { id: 3, text: "Какое из следующих утверждений лучше описывает вас?", options: [
+    { id: "3a", text: "Конкурентная среда мотивирует меня к совершенству.", group: "Success" },
+    { id: "3b", text: "Мне нравится работать с целями.", group: "Reaching Goals" },
+    { id: "3c", text: "Я хотел бы, чтобы мои усилия были признаны.", group: "Recognition" }
+  ] },
+  { id: 4, text: "Какое из следующих утверждений лучше описывает вас?", options: [
+    { id: "4a", text: "Я постоянно проверяю точность представленной мне информации.", group: "Being Logical" },
+    { id: "4b", text: "Моя интуиция часто правильно меня направляет.", group: "Intuition" },
+    { id: "4c", text: "Я хочу, чтобы рабочая среда была приятной.", group: "Professional Pleasure" }
+  ] },
+  { id: 5, text: "Какое из следующих утверждений лучше описывает вас?", options: [
+    { id: "5a", text: "Я достигаю своих целей последовательно.", group: "Reaching Goals" },
+    { id: "5b", text: "Меня мотивируют задачи, которые, как я считаю, будут для меня выгодны.", group: "Value" },
+    { id: "5c", text: "Я стараюсь понять, как меня воспринимают другие.", group: "Social Approval" }
+  ] },
+  { id: 6, text: "Какое из следующих утверждений лучше описывает вас?", options: [
+    { id: "6a", text: "Я ожидаю, что люди будут подкреплять свои идеи четкими доводами.", group: "Being Logical" },
+    { id: "6b", text: "Я не считаю свою работу завершенной, пока не буду ею доволен.", group: "Perfectionism" },
+    { id: "6c", text: "Я нахожу время спросить, как дела у людей, несмотря на загруженность.", group: "Social Contact" }
+  ] },
+  { id: 7, text: "Какое из следующих утверждений лучше описывает вас?", options: [
+    { id: "7a", text: "Я считаю, что риск необходим для достижения успеха.", group: "Resilience" },
+    { id: "7b", text: "Я уверенно защищаю свою точку зрения, даже если она отличается от большинства.", group: "Influence" },
+    { id: "7c", text: "Я следую решениям команды, даже если не согласен.", group: "Team Spirit" }
+  ] },
+  { id: 8, text: "Какое из следующих утверждений лучше описывает вас?", options: [
+    { id: "8a", text: "Я придерживаюсь высочайшего качества в своей работе без компромиссов.", group: "Perfectionism" },
+    { id: "8b", text: "Для меня важно, ценят ли мою работу.", group: "Recognition" },
+    { id: "8c", text: "Я ставлю свои обязанности превыше всего.", group: "Responsibility" }
+  ] },
+  { id: 9, text: "Какое из следующих утверждений лучше описывает вас?", options: [
+    { id: "9a", text: "Мне комфортно идти на риск.", group: "Resilience" },
+    { id: "9b", text: "Я стараюсь понять и сопереживать эмоциям других.", group: "Empathy" },
+    { id: "9c", text: "Я работаю максимально эффективно.", group: "Efficiency" }
+  ] },
+  { id: 10, text: "Какое из следующих утверждений лучше описывает вас?", options: [
+    { id: "10a", text: "Я работаю, чтобы другие чувствовали себя ценными и счастливыми.", group: "Bringing Happiness" },
+    { id: "10b", text: "Я высказываю свое мнение, когда обсуждается решение.", group: "Influence" },
+    { id: "10c", text: "Я предпочитаю, чтобы обязанности были четко определены.", group: "Responsibility" }
+  ] },
+  { id: 11, text: "Какое из следующих утверждений лучше описывает вас?", options: [
+    { id: "11a", text: "Я стремлюсь быть лучшим в команде.", group: "Success" },
+    { id: "11b", text: "Я хочу, чтобы другие думали обо мне положительно.", group: "Social Approval" },
+    { id: "11c", text: "Командный дух важен для меня.", group: "Team Spirit" }
+  ] },
+  { id: 12, text: "Какое из следующих утверждений лучше описывает вас?", options: [
+    { id: "12a", text: "Я уверен, что смогу справиться с будущими проблемами, если они возникнут.", group: "Resilience" },
+    { id: "12b", text: "Я ожидаю высокого качества от себя и других.", group: "Perfectionism" },
+    { id: "12c", text: "Менеджеры, которые не ценят успех, делают меня несчастным.", group: "Recognition" }
+  ] },
+  { id: 13, text: "Какое из следующих утверждений лучше описывает вас?", options: [
+    { id: "13a", text: "Я уверен, что могу постоянно совершенствоваться.", group: "Intellectual Discovery" },
+    { id: "13b", text: "Я внимательно слежу за выполнением работы, которую ожидаю от других.", group: "Reaching Goals" },
+    { id: "13c", text: "Я не трачу время на задачи, которые не имеют пользы.", group: "Value" }
+  ] },
+  { id: 14, text: "Какое из следующих утверждений лучше описывает вас?", options: [
+    { id: "14a", text: "Я принимаю решения, основываясь на логике.", group: "Being Logical" },
+    { id: "14b", text: "Я часто стараюсь быть готовым ответить на любые вопросы о своей работе.", group: "Perfectionism" },
+    { id: "14c", text: "Я избегаю поведения, которое будет осуждаться.", group: "Social Approval" }
+  ] },
+  { id: 15, text: "Какое из следующих утверждений лучше описывает вас?", options: [
+    { id: "15a", text: "Я быстро усваиваю новую информацию.", group: "Intellectual Discovery" },
+    { id: "15b", text: "Я могу долго работать над задачами, которые мне нравятся.", group: "Professional Pleasure" },
+    { id: "15c", text: "Я всегда ищу способы повысить эффективность.", group: "Efficiency" }
+  ] },
+  { id: 16, text: "Какое из следующих утверждений лучше описывает вас?", options: [
+    { id: "16a", text: "Я стараюсь, чтобы мои решения не расстраивали других.", group: "Bringing Happiness" },
+    { id: "16b", text: "Я подхожу к принятию решений смело.", group: "Resilience" },
+    { id: "16c", text: "Я очень ценю уважение других ко мне.", group: "Respect" }
+  ] },
+  { id: 17, text: "Какое из следующих утверждений лучше описывает вас?", options: [
+    { id: "17a", text: "Я умею определять и эффективно выражать свои эмоции.", group: "Empathy" },
+    { id: "17b", text: "Мои обязанности важнее всего.", group: "Responsibility" },
+    { id: "17c", text: "Я могу отличить значимые задачи от бесполезных.", group: "Value" }
+  ] },
+  { id: 18, text: "Какое из следующих утверждений лучше описывает вас?", options: [
+    { id: "18a", text: "Мне трудно принять неудачу в своих усилиях.", group: "Success" },
+    { id: "18b", text: "Я поддерживаю баланс между работой и личной жизнью.", group: "Professional Pleasure" },
+    { id: "18c", text: "Для меня важно уважение других.", group: "Respect" }
+  ] },
+  { id: 19, text: "Какое из следующих утверждений лучше описывает вас?", options: [
+    { id: "19a", text: "Я хорошо понимаю чувства людей.", group: "Empathy" },
+    { id: "19b", text: "Мне важно, что думают обо мне другие.", group: "Social Approval" },
+    { id: "19c", text: "Я забочусь об успехе команды больше, чем об индивидуальном успехе.", group: "Team Spirit" }
+  ] },
+  { id: 20, text: "Какое из следующих утверждений лучше описывает вас?", options: [
+    { id: "20a", text: "Я тщательно проверяю свою работу.", group: "Perfectionism" },
+    { id: "20b", text: "Меня мотивирует признание.", group: "Recognition" },
+    { id: "20c", text: "Я подробно объясняю что-либо.", group: "Social Contact" }
+  ] },
+  { id: 21, text: "Какое из следующих утверждений лучше описывает вас?", options: [
+    { id: "21a", text: "Мне важно делать людей счастливыми.", group: "Bringing Happiness" },
+    { id: "21b", text: "Я должен соответствовать ожиданиям своей роли.", group: "Responsibility" },
+    { id: "21c", text: "Я работаю лучше, когда понимаю дополнительную выгоду.", group: "Value" }
+  ] },
+  { id: 22, text: "Какое из следующих утверждений лучше описывает вас?", options: [
+    { id: "22a", text: "Я всегда прилагаю выдающиеся усилия для достижения успеха.", group: "Success" },
+    { id: "22b", text: "Для меня важно получать удовольствие от работы.", group: "Professional Pleasure" },
+    { id: "22c", text: "Во время работы я сосредоточен на достижении результатов.", group: "Reaching Goals" }
+  ] },
+  { id: 23, text: "Какое из следующих утверждений лучше описывает вас?", options: [
+    { id: "23a", text: "Я не стесняюсь выражать свои чувства.", group: "Empathy" },
+    { id: "23b", text: "Я часто полагаюсь на интуицию.", group: "Intuition" },
+    { id: "23c", text: "Я нахожу время для тех, кто хочет со мной поговорить.", group: "Social Contact" }
+  ] },
+  { id: 24, text: "Какое из следующих утверждений лучше описывает вас?", options: [
+    { id: "24a", text: "Я чувствую себя хорошо, когда делаю других счастливыми.", group: "Bringing Happiness" },
+    { id: "24b", text: "Я действую так, чтобы заслужить уважение.", group: "Respect" },
+    { id: "24c", text: "Мне интересно, что думают обо мне коллеги.", group: "Social Approval" }
+  ] },
+  { id: 25, text: "Какое из следующих утверждений лучше описывает вас?", options: [
+    { id: "25a", text: "Меня мотивирует изучение нового.", group: "Intellectual Discovery" },
+    { id: "25b", text: "Я умею убеждать других.", group: "Influence" },
+    { id: "25c", text: "Мой инстинкт точно подсказывает, можно ли доверять человеку.", group: "Intuition" }
+  ] },
+  { id: 26, text: "Какое из следующих утверждений лучше описывает вас?", options: [
+    { id: "26a", text: "Я стремлюсь быть лучшим в команде.", group: "Success" },
+    { id: "26b", text: "Я ожидаю, что мои достижения будут оценены.", group: "Recognition" },
+    { id: "26c", text: "Для меня важно быть частью команды.", group: "Team Spirit" }
+  ] },
+  { id: 27, text: "Какое из следующих утверждений лучше описывает вас?", options: [
+    { id: "27a", text: "Я стараюсь не расстраивать людей.", group: "Bringing Happiness" },
+    { id: "27b", text: "Я стараюсь убедить тех, кто не согласен со мной.", group: "Influence" },
+    { id: "27c", text: "Мое присутствие вызывает уважение у других.", group: "Respect" }
+  ] },
+  { id: 28, text: "Какое из следующих утверждений лучше описывает вас?", options: [
+    { id: "28a", text: "Я стараюсь сделать рабочую среду приятной.", group: "Professional Pleasure" },
+    { id: "28b", text: "Меня больше мотивирует работа с другими.", group: "Social Contact" },
+    { id: "28c", text: "Сплоченность в команде важна для меня.", group: "Team Spirit" },
+    { id: "29c", text: "Я считаю эффективность ключом к успеху.", group: "Efficiency" }
+  ] },
+  { id: 29, text: "Какое из следующих утверждений лучше описывает вас?", options: [
+    { id: "29a", text: "Я остаюсь решительным даже в условиях неопределенности.", group: "Resilience" },
+    { id: "29b", text: "Я часто стараюсь узнать что-то новое.", group: "Intellectual Discovery" },
+    { id: "29c", text: "Я считаю эффективность ключом к успеху.", group: "Efficiency" }
+  ] },
+  { id: 30, text: "Какое из следующих утверждений лучше описывает вас?", options: [
+    { id: "30a", text: "Я сохраняю объективность, не позволяя эмоциям влиять на решения.", group: "Being Logical" },
+    { id: "30b", text: "Мое мнение должно учитываться при принятии решений.", group: "Influence" },
+    { id: "30c", text: "Я сочетаю интуицию с анализом данных при принятии решений.", group: "Intuition" }
+  ] },
+  { id: 31, text: "Какое из следующих утверждений лучше описывает вас?", options: [
+    { id: "31a", text: "Я стараюсь быть самым осведомленным по теме.", group: "Intellectual Discovery" },
+    { id: "31b", text: "Я избегаю работы, которая мне не нравится.", group: "Professional Pleasure" },
+    { id: "31c", text: "Я не терплю неуважительного отношения ко мне.", group: "Respect" }
+  ] },
+  { id: 32, text: "Какое из следующих утверждений лучше описывает вас?", options: [
+    { id: "32a", text: "Коллеги часто говорят, что я понимаю их чувства.", group: "Empathy" },
+    { id: "32b", text: "Я внимательно слежу за реакцией других, чтобы лучше влиять на них.", group: "Influence" },
+    { id: "32c", text: "Мне нравится общаться с другими людьми.", group: "Social Contact" }
+  ] },
+  { id: 33, text: "Какое из следующих утверждений лучше описывает вас?", options: [
+    { id: "33a", text: "Я чувствую, могу ли доверять человеку.", group: "Intuition" },
+    { id: "33b", text: "Я проверяю и дорабатываю любую работу, которую делегирую.", group: "Responsibility" },
+    { id: "33c", text: "Мне не нравится выполнять задачи, не приносящие пользы.", group: "Value" }
+  ] },
+  { id: 34, text: "Какое из следующих утверждений лучше описывает вас?", options: [
+    { id: "34a", text: "Я стремлюсь быть лучшим во всем, что делаю.", group: "Success" },
+    { id: "34b", text: "Я выполняю задачи вовремя.", group: "Reaching Goals" },
+    { id: "34c", text: "Меня мотивирует, когда мои усилия признают.", group: "Recognition" }
+  ] },
+  { id: 35, text: "Какое из следующих утверждений лучше описывает вас?", options: [
+    { id: "35a", text: "Мне комфортно идти на обоснованный риск при поиске возможностей.", group: "Resilience" },
+    { id: "35b", text: "Мне важно, что думают о моем отношении.", group: "Social Approval" },
+    { id: "35c", text: "Мне нравится, когда команда регулярно общается вне работы.", group: "Team Spirit" }
+  ] },
+  { id: 36, text: "Какое из следующих утверждений лучше описывает вас?", options: [
+    { id: "36a", text: "Факты определяют мои решения.", group: "Being Logical" },
+    { id: "36b", text: "Я быстро адаптируюсь к новым ситуациям.", group: "Intellectual Discovery" },
+    { id: "36c", text: "У меня высокий уровень самоконтроля эмоций.", group: "Empathy" }
+  ] },
+  // Repeat questions 1-3 as 37-39 for consistency
+  { id: 37, text: "Какое из следующих утверждений лучше описывает вас? (повтор)", isRepeat: true, options: [
+    { id: "37a", text: "Я обеспечиваю соответствие моей работы высшим стандартам.", group: "Perfectionism" },
+    { id: "37b", text: "Я делаю все необходимое для достижения моих целей.", group: "Reaching Goals" },
+    { id: "37c", text: "Я придаю значение социальному взаимодействию с коллегами", group: "Social Contact" }
+  ] },
+  { id: 38, text: "Какое из следующих утверждений лучше описывает вас? (повтор)", isRepeat: true, options: [
+    { id: "38a", text: "Я основываю свои решения на осязаемых данных.", group: "Being Logical" },
+    { id: "38b", text: "Мне нравится помогать тем, кто обращается ко мне с проблемами.", group: "Bringing Happiness" },
+    { id: "38c", text: "Я полагаюсь на интуицию при принятии решений.", group: "Intuition" }
+  ] },
+  { id: 39, text: "Какое из следующих утверждений лучше описывает вас? (повтор)", isRepeat: true, options: [
+    { id: "39a", text: "Конкурентная среда мотивирует меня к совершенству.", group: "Success" },
+    { id: "39b", text: "Мне нравится работать с целями.", group: "Reaching Goals" },
+    { id: "39c", text: "Я хотел бы, чтобы мои усилия были признаны.", group: "Recognition" }
+  ] },
+  // Motivational selection question
+  { id: 40, text: "Выберите 5 наиболее важных для вас мотивационных факторов", type: "motivational_selection", options: [
     "Intuition", "Success", "Professional Pleasure", "Bringing Happiness",
     "Perfectionism", "Social Contact", "Empathy", "Recognition",
-    "Resilience", "Respect", "Efficiency", "Intellectual Discovery",
+    "Resilience", "Respect", "Value", "Intellectual Discovery",
     "Team Spirit", "Influence", "Responsibility", "Reaching Goals"
-  ].map(item => ({ id: item, text: item }))
-});
+  ].map(item => ({ id: item, text: item })) }
+];
+
+// Ensure all questions 1–39 have exactly 3 options
+for (let i = 0; i < 39; i++) {
+  if (questions[i] && questions[i].options && questions[i].options.length > 3) {
+    questions[i].options = questions[i].options.slice(0, 3);
+  }
+}
 
 module.exports = {
   getAllQuestions: () => questions,

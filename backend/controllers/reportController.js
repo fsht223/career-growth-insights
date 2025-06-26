@@ -1,4 +1,6 @@
 const pool = require('../db/pool');
+const path = require('path');
+const fs = require('fs');
 
 const getReports = async (req, res) => {
   const client = await pool.connect();
@@ -135,13 +137,20 @@ const downloadPDF = async (req, res) => {
       });
     }
 
-    // In a real implementation, you would read the PDF file from storage
-    // For now, return a mock response
-    res.status(200).json({ 
-      message: 'PDF download would be implemented here',
-      pdfStatus: report.pdf_status 
-    });
+    if (report.pdf_status === 'ready' && report.pdf_path) {
+      // Stream the PDF file
+      const filePath = report.pdf_path;
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ error: 'PDF file not found' });
+      }
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${report.testee_name || 'report'}_${new Date(report.completed_at).toISOString().split('T')[0]}.pdf"`);
+      const fileStream = fs.createReadStream(filePath);
+      return fileStream.pipe(res);
+    }
 
+    // Fallback
+    res.status(404).json({ error: 'PDF not available' });
   } catch (error) {
     console.error('PDF download error:', error);
     res.status(500).json({ error: 'Failed to download PDF' });

@@ -246,14 +246,14 @@ const TestResults = () => {
                   </div>
                   <div className="relative">
                     <Progress 
-                      value={Math.min(result.percentage, 120)} 
+                      value={Math.min(Number(result.percentage), 200)} 
                       className="h-4 bg-slate-200"
                     />
                     <div 
                       className={`absolute top-0 left-0 h-4 rounded-full transition-all ${getProgressColor(result.score, result.benchmark)}`}
-                      style={{ width: `${Math.min(result.percentage, 120)}%` }}
+                      style={{ width: `${Math.min(Number(result.percentage), 200)}%` }}
                     />
-                    {/* Benchmark line */}
+                    {/* Benchmark line at 100% */}
                     <div 
                       className="absolute top-0 h-4 w-0.5 bg-slate-800"
                       style={{ left: '100%' }}
@@ -290,6 +290,105 @@ const TestResults = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Profile Averages */}
+        <Card className="mb-8 border-blue-200 bg-blue-50">
+          <CardHeader>
+            <CardTitle className="text-lg text-blue-900">Профили мотивации</CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+            {testResults.profileAverages && Object.entries(testResults.profileAverages).map(([profile, value]) => (
+              <div key={profile} className="flex flex-col items-center">
+                <span className="font-semibold text-blue-800">{profile}</span>
+                <span className="text-2xl font-bold">{Math.round(value)}%</span>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        {/* Consistency, Awareness, Inner/Outer, Reasoning */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+          <Card className="border-indigo-200 bg-indigo-50">
+            <CardHeader>
+              <CardTitle className="text-lg text-indigo-900">Согласованность (Consistency)</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 flex flex-col items-center">
+              <span className="text-2xl font-bold">{Math.round(testResults.consistency || 0)}%</span>
+              <span className="text-slate-600 text-sm mt-2">Согласованность ответов на повторяющиеся вопросы</span>
+            </CardContent>
+          </Card>
+          <Card className="border-yellow-200 bg-yellow-50">
+            <CardHeader>
+              <CardTitle className="text-lg text-yellow-900">Awareness Level</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 flex flex-col items-center">
+              <span className="text-2xl font-bold">{testResults.awarenessLevel || 0}%</span>
+              <span className="text-slate-600 text-sm mt-2">Осознанность выбора мотивации</span>
+            </CardContent>
+          </Card>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+          <Card className="border-green-200 bg-green-50">
+            <CardHeader>
+              <CardTitle className="text-lg text-green-900">Внутренняя/Внешняя мотивация</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 flex flex-col items-center">
+              <div className="flex flex-col items-center">
+                <span className="font-semibold">Внутренняя: <span className="text-green-800">{Math.round(testResults.innerOuter?.inner || 0)}%</span></span>
+                <span className="font-semibold">Внешняя: <span className="text-green-800">{Math.round(testResults.innerOuter?.outer || 0)}%</span></span>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-purple-200 bg-purple-50">
+            <CardHeader>
+              <CardTitle className="text-lg text-purple-900">Reasoning</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 flex flex-col items-center">
+              <div className="flex flex-col items-center">
+                <span className="font-semibold">Интуиция: <span className="text-purple-800">{Math.round(testResults.reasoning?.intuition || 0)}%</span></span>
+                <span className="font-semibold">Логика: <span className="text-purple-800">{Math.round(testResults.reasoning?.beingLogical || 0)}%</span></span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Strengths and Development Areas */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+          <Card className="border-green-300 bg-green-50">
+            <CardHeader>
+              <CardTitle className="text-lg text-green-900">Сильные стороны</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              {testResults.strengths && testResults.strengths.length > 0 ? (
+                <ul className="list-disc pl-6">
+                  {testResults.strengths.map((btn: string) => (
+                    <li key={btn} className="font-semibold text-green-800">{btn}</li>
+                  ))}
+                </ul>
+              ) : (
+                <span className="text-slate-600">Нет выраженных сильных сторон</span>
+              )}
+            </CardContent>
+          </Card>
+          <Card className="border-red-300 bg-red-50">
+            <CardHeader>
+              <CardTitle className="text-lg text-red-900">Зоны развития</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              {testResults.developmentAreas && testResults.developmentAreas.length > 0 ? (
+                <ul className="list-disc pl-6">
+                  {testResults.developmentAreas.map((area: any) => (
+                    <li key={area.btn} className="font-semibold text-red-800">
+                      {area.btn}: {Math.round(area.percent)}%
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <span className="text-slate-600">Нет выраженных зон развития</span>
+              )}
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Action Buttons */}
         <Card className="shadow-xl border-0">
