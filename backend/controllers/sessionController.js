@@ -189,6 +189,23 @@ const completeTest = async (req, res) => {
 
     const session = sessionResult.rows[0];
 
+    // ===== ADD THIS DEBUG CODE =====
+    console.log('\n=== SESSION DEBUG DATA ===');
+    console.log('Session ID:', session.session_id);
+    console.log('Session answers type:', typeof session.answers);
+    console.log('Session answers:', session.answers);
+    
+    if (session.answers) {
+      console.log('Answers keys:', Object.keys(session.answers));
+      console.log('Sample answers:');
+      for (let i = 1; i <= 5; i++) {
+        console.log(`Answer ${i}:`, session.answers[i]);
+      }
+    }
+    
+    console.log('Motivational selection:', session.motivational_selection);
+    // ===== END DEBUG CODE =====
+
     if (session.completed) {
       await client.query('ROLLBACK');
       return res.status(400).json({ error: 'Test already completed' });
@@ -304,7 +321,7 @@ const ALL_BUTTONS = [
   "Perfectionism", "Social Contact", "Empathy", "Recognition",
   "Resilience", "Respect", "Efficiency", "Intellectual Discovery",
   "Team Spirit", "Influence", "Responsibility", "Reaching Goals",
-  "Being Logical", "Social Approval"
+  "Being Logical", "Social Approval", "Value" // Added missing "Value" button
 ];
 
 const getDefaultGoldenLine = () => {
@@ -327,7 +344,8 @@ const getDefaultGoldenLine = () => {
     "Responsibility": 11,
     "Reaching Goals": 11,
     "Being Logical": 11,
-    "Social Approval": 11
+    "Social Approval": 11,
+    "Value": 11
   };
 };
 
@@ -337,6 +355,8 @@ const PROFILE_GROUPS = {
   Affiliation: ["Professional Pleasure", "Bringing Happiness", "Social Contact", "Empathy", "Team Spirit", "Recognition", "Social Approval"],
   Achievement: ["Perfectionism", "Reaching Goals", "Responsibility", "Value", "Efficiency", "Intellectual Discovery", "Being Logical"]
 };
+
+// Fixed Inner/Outer motivation mappings
 const INNER_MOTIVATION = ["Intuition", "Professional Pleasure", "Bringing Happiness", "Empathy", "Resilience", "Intellectual Discovery", "Team Spirit"];
 const OUTER_MOTIVATION = ["Perfectionism", "Success", "Reaching Goals", "Recognition", "Social Contact", "Influence", "Responsibility", "Value", "Respect", "Efficiency", "Being Logical", "Social Approval"];
 
@@ -354,27 +374,120 @@ const calculateTestResults = (session, test) => {
 
   // Calculate scores from answers (questions 1-39)
   const answers = session.answers || {};
+  let totalAssignedPoints = 0;
+  let processedQuestions = 0;
+
+  console.log('=== STARTING CALCULATION DEBUG ===');
+  console.log('Session answers keys:', Object.keys(answers));
+  console.log('Sample answer:', answers['0']);
+  
+  // FIXED: Handle the indexing mismatch
+  // Frontend saves answers as 0-38, but we need to process as 1-39
   for (let qId = 1; qId <= 39; qId++) {
     const question = require('../data/questions').getQuestionById(qId);
-    if (!question || !question.options || question.options.length !== 3) continue;
-    const answer = answers[qId];
+    
+    console.log(`\n--- Question ${qId} ---`);
+    
+    if (!question) {
+      console.log(`❌ Question ${qId} not found`);
+      continue;
+    }
+    
+    if (!question.options || question.options.length !== 3) {
+      console.log(`❌ Question ${qId} invalid options:`, question.options);
+      continue;
+    }
+    
+    console.log(`Question ${qId} options:`, question.options.map(opt => `${opt.id}:${opt.group}`));
+    
+    // FIXED: Use (qId - 1) to get the answer, since frontend uses 0-based indexing
+    const answerKey = (qId - 1).toString();
+    const answer = answers[answerKey];
+    console.log(`Answer for Q${qId} (key: ${answerKey}):`, answer);
+    
     if (answer && answer.first && answer.second) {
-      // Assign 3 to first, 2 to second, 1 to the remaining
-      question.options.forEach(opt => {
-        if (groupScores.hasOwnProperty(opt.group)) {
-          if (opt.id === answer.first) groupScores[opt.group] += 3;
-          else if (opt.id === answer.second) groupScores[opt.group] += 2;
-          else groupScores[opt.group] += 1;
+      console.log(`✅ Valid answer - First: ${answer.first}, Second: ${answer.second}`);
+      
+      const firstOption = question.options.find(opt => opt.id === answer.first);
+      const secondOption = question.options.find(opt => opt.id === answer.second);
+      
+      console.log('First option found:', firstOption);
+      console.log('Second option found:', secondOption);
+      
+      if (firstOption && secondOption) {
+        // Find the third option (not selected)
+        const thirdOption = question.options.find(opt => 
+          opt.id !== answer.first && opt.id !== answer.second
+        );
+        
+        console.log('Third option found:', thirdOption);
+
+        // Assign points: 3 to first, 2 to second, 1 to third
+        if (firstOption.group && groupScores.hasOwnProperty(firstOption.group)) {
+          groupScores[firstOption.group] += 3;
+          totalAssignedPoints += 3;
+          console.log(`+3 points to ${firstOption.group} (total now: ${groupScores[firstOption.group]})`);
         }
-      });
+        
+        if (secondOption.group && groupScores.hasOwnProperty(secondOption.group)) {
+          groupScores[secondOption.group] += 2;
+          totalAssignedPoints += 2;
+          console.log(`+2 points to ${secondOption.group} (total now: ${groupScores[secondOption.group]})`);
+        }
+        
+        if (thirdOption && thirdOption.group && groupScores.hasOwnProperty(thirdOption.group)) {
+          groupScores[thirdOption.group] += 1;
+          totalAssignedPoints += 1;
+          console.log(`+1 point to ${thirdOption.group} (total now: ${groupScores[thirdOption.group]})`);
+        }
+        
+        processedQuestions++;
+        console.log(`Question ${qId} processed successfully. Running total: ${totalAssignedPoints}`);
+      } else {
+        console.log(`❌ Invalid answer options for question ${qId}`);
+        console.log('Available option IDs:', question.options.map(opt => opt.id));
+        console.log('User selected:', { first: answer.first, second: answer.second });
+        
+        // Fallback: assign 1 point to each option
+        question.options.forEach(opt => {
+          if (opt.group && groupScores.hasOwnProperty(opt.group)) {
+            groupScores[opt.group] += 1;
+            totalAssignedPoints += 1;
+            console.log(`Fallback +1 point to ${opt.group}`);
+          }
+        });
+      }
     } else {
-      // If answer is missing or incomplete, assign 1 to all three
+      console.log(`❌ Incomplete/missing answer for question ${qId}`);
+      // Fallback: assign 1 point to each option if answer is missing/incomplete
       question.options.forEach(opt => {
-        if (groupScores.hasOwnProperty(opt.group)) {
+        if (opt.group && groupScores.hasOwnProperty(opt.group)) {
           groupScores[opt.group] += 1;
+          totalAssignedPoints += 1;
+          console.log(`Missing answer fallback +1 point to ${opt.group}`);
         }
       });
     }
+  }
+
+  // Final debug logging
+  console.log('\n=== FINAL CALCULATION RESULTS ===');
+  console.log('Processed questions:', processedQuestions);
+  console.log('Total assigned points:', totalAssignedPoints);
+  console.log('Expected total points (39 questions × 6 points):', 39 * 6);
+  console.log('Group scores:', groupScores);
+  console.log('Sum of all group scores:', Object.values(groupScores).reduce((a, b) => a + b, 0));
+  
+  // Check if we have all expected buttons
+  const missingButtons = ALL_BUTTONS.filter(btn => !groupScores.hasOwnProperty(btn));
+  if (missingButtons.length > 0) {
+    console.log('Missing buttons in groupScores:', missingButtons);
+  }
+  
+  // Check for zero scores
+  const zeroScores = Object.entries(groupScores).filter(([btn, score]) => score === 0);
+  if (zeroScores.length > 0) {
+    console.log('Buttons with zero scores:', zeroScores);
   }
 
   // Debug: print sum of all button scores and number of answered questions
@@ -398,79 +511,99 @@ const calculateTestResults = (session, test) => {
   // Profile averages
   const profileAverages = {};
   Object.entries(PROFILE_GROUPS).forEach(([profile, btns]) => {
-    const vals = btns.map(btn => percentages[btn] || 0);
+    const vals = btns.map(btn => percentages[btn] || 0).filter(v => !isNaN(v));
     profileAverages[profile] = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
   });
 
-  // Consistency (Q1-3 vs Q37-39)
-  const consistencyPairs = [
-    [1, 37], [2, 38], [3, 39]
-  ];
+  // Consistency calculation (Q1-3 vs Q37-39)
+  const consistencyPairs = [[1, 37], [2, 38], [3, 39]];
   const consistencyScores = [];
+  
   consistencyPairs.forEach(([qA, qB]) => {
-    const ansA = answers[qA];
-    const ansB = answers[qB];
-    if (ansA && ansB) {
+    // FIXED: Use (qId - 1) for answer keys here too
+    const ansA = answers[(qA - 1).toString()];
+    const ansB = answers[(qB - 1).toString()];
+    
+    if (ansA && ansB && ansA.first && ansA.second && ansB.first && ansB.second) {
       const qAObj = require('../data/questions').getQuestionById(qA);
       const qBObj = require('../data/questions').getQuestionById(qB);
-      [0, 1, 2].forEach(idx => {
-        const btnA = qAObj.options[idx].group;
-        const btnB = qBObj.options[idx].group;
-        // Score for each button in both questions
-        let scoreA = 0, scoreB = 0;
-        if (ansA.first === qAObj.options[idx].id) scoreA = 3;
-        else if (ansA.second === qAObj.options[idx].id) scoreA = 2;
-        else scoreA = 1;
-        if (ansB.first === qBObj.options[idx].id) scoreB = 3;
-        else if (ansB.second === qBObj.options[idx].id) scoreB = 2;
-        else scoreB = 1;
-        if (btnA === btnB) {
-          const minV = Math.min(scoreA, scoreB);
-          const maxV = Math.max(scoreA, scoreB);
-          if (maxV > 0) {
-            consistencyScores.push((minV / maxV) * 100);
+      
+      if (qAObj && qBObj) {
+        // Compare each button's score in both questions
+        for (let idx = 0; idx < 3; idx++) {
+          const btnA = qAObj.options[idx].group;
+          const btnB = qBObj.options[idx].group;
+          
+          if (btnA === btnB) {
+            // Calculate scores for this button in both questions
+            let scoreA = 1, scoreB = 1; // default score
+            
+            if (ansA.first === qAObj.options[idx].id) scoreA = 3;
+            else if (ansA.second === qAObj.options[idx].id) scoreA = 2;
+            
+            if (ansB.first === qBObj.options[idx].id) scoreB = 3;
+            else if (ansB.second === qBObj.options[idx].id) scoreB = 2;
+            
+            const minScore = Math.min(scoreA, scoreB);
+            const maxScore = Math.max(scoreA, scoreB);
+            
+            if (maxScore > 0) {
+              consistencyScores.push((minScore / maxScore) * 100);
+            }
           }
         }
-      });
+      }
     }
   });
-  const consistency = consistencyScores.length ? consistencyScores.reduce((a, b) => a + b, 0) / consistencyScores.length : 0;
+  
+  const consistency = consistencyScores.length ? 
+    consistencyScores.reduce((a, b) => a + b, 0) / consistencyScores.length : 0;
 
-  // Awareness Level
+  // Awareness Level calculation
   let awarenessLevel = 0;
   if (starredItems.length === 5) {
-    let count = 0;
-    starredItems.forEach(btn => {
-      if ((percentages[btn] || 0) >= 96) count++;
-    });
-    awarenessLevel = count * 20;
+    const strongItems = starredItems.filter(item => 
+      percentages[item] && percentages[item] >= 96
+    ).length;
+    awarenessLevel = strongItems * 20;
   }
 
-  // Inner/Outer Motivation
+  // Inner/Outer Motivation calculation
   const totalPoints = Object.values(groupScores).reduce((a, b) => a + b, 0) || 1;
-  const innerPoints = INNER_MOTIVATION.map(btn => groupScores[btn] || 0).reduce((a, b) => a + b, 0);
-  const outerPoints = OUTER_MOTIVATION.map(btn => groupScores[btn] || 0).reduce((a, b) => a + b, 0);
+  const innerPoints = INNER_MOTIVATION.reduce((sum, btn) => sum + (groupScores[btn] || 0), 0);
+  const outerPoints = OUTER_MOTIVATION.reduce((sum, btn) => sum + (groupScores[btn] || 0), 0);
+  
   const innerOuter = {
     inner: (innerPoints / totalPoints) * 100,
     outer: (outerPoints / totalPoints) * 100
   };
 
-  // Reasoning
-  const intuition = groupScores["Intuition"] || 0;
-  const beingLogical = groupScores["Being Logical"] || 0;
-  const sumReasoning = intuition + beingLogical || 1;
+  // Reasoning calculation
+  const intuitionScore = groupScores["Intuition"] || 0;
+  const logicalScore = groupScores["Being Logical"] || 0;
+  const reasoningTotal = intuitionScore + logicalScore || 1;
+  
   const reasoning = {
-    intuition: (intuition / sumReasoning) * 100,
-    beingLogical: (beingLogical / sumReasoning) * 100
+    intuition: (intuitionScore / reasoningTotal) * 100,
+    beingLogical: (logicalScore / reasoningTotal) * 100
   };
 
-  // Strengths, Boosters, Development Areas (structure only)
+  // Determine strengths and development areas
   const strengths = ALL_BUTTONS.filter(btn => (percentages[btn] || 0) >= 100);
-  const boosters = strengths; // For now, same as strengths
+  const boosters = strengths; // Same as strengths for now
+
   // Top 5 buttons with largest deviation from 100%
-  const deviations = ALL_BUTTONS.map(btn => ({ btn, dev: Math.abs((percentages[btn] || 0) - 100) }));
-  deviations.sort((a, b) => b.dev - a.dev);
-  const developmentAreas = deviations.slice(0, 5).map(d => ({ btn: d.btn, percent: percentages[d.btn] }));
+  const deviations = ALL_BUTTONS.map(btn => ({
+    btn,
+    percent: percentages[btn] || 0,
+    deviation: Math.abs((percentages[btn] || 0) - 100)
+  }));
+  
+  deviations.sort((a, b) => b.deviation - a.deviation);
+  const developmentAreas = deviations.slice(0, 5).map(d => ({
+    btn: d.btn,
+    percent: d.percent
+  }));
 
   return {
     groupScores,

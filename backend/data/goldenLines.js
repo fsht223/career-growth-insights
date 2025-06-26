@@ -19,7 +19,8 @@ module.exports = [
       "Responsibility": 13.0,
       "Reaching Goals": 13.5,
       "Being Logical": 15.3,
-      "Social Approval": 10.4
+      "Social Approval": 10.4,
+      "Value": 11.0
     }
   },
   {
@@ -42,7 +43,8 @@ module.exports = [
       "Responsibility": 11.5,
       "Reaching Goals": 12.5,
       "Being Logical": 13.0,
-      "Social Approval": 11.5
+      "Social Approval": 11.5,
+      "Value": 11.8
     }
   }
   // Add more professions...
