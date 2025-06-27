@@ -9,15 +9,35 @@ class EmailService {
   }
 
   initTransporter() {
-    this.transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: process.env.SMTP_PORT || 587,
-      secure: false,
+    // Настройка для сервера ditum.kz
+    const smtpConfig = {
+      host: process.env.SMTP_HOST || 'ditum.kz',
+      port: parseInt(process.env.SMTP_PORT) || 465,
+      secure: process.env.SMTP_SECURE === 'true' || true, // true для SSL/TLS
       auth: {
-        user: process.env.SMTP_USER,
+        user: process.env.SMTP_USER || 'test@ditum.kz',
         pass: process.env.SMTP_PASSWORD
-      }
-    });
+      },
+      // Дополнительные настройки для совместимости
+      tls: {
+        rejectUnauthorized: false // Для самоподписанных сертификатов
+      },
+      debug: process.env.NODE_ENV === 'development', // Логи для отладки
+      logger: process.env.NODE_ENV === 'development'
+    };
+
+    // Для разработки - используем Gmail настройки как fallback
+    if (process.env.NODE_ENV === 'development' && !process.env.SMTP_USER) {
+      smtpConfig.host = 'smtp.gmail.com';
+      smtpConfig.port = 587;
+      smtpConfig.secure = false;
+      smtpConfig.auth.user = 'alisher.ibraev03@gmail.com';
+      smtpConfig.auth.pass = 'pyam ondy twqt pola';
+    }
+
+    console.log(`Initializing email service with host: ${smtpConfig.host}:${smtpConfig.port}`);
+
+    this.transporter = nodemailer.createTransport(smtpConfig);
   }
 
   async sendTestReport(reportData, pdfBuffer) {
@@ -26,22 +46,24 @@ class EmailService {
     try {
       const emailTemplate = this.getReportEmailTemplate();
       const compiledTemplate = handlebars.compile(emailTemplate);
-      
+
       const htmlContent = compiledTemplate({
         userName: `${userInfo.firstName} ${userInfo.lastName}`,
         projectName: testInfo.projectName,
         testDate: new Date().toLocaleDateString('ru-RU', {
           year: 'numeric',
-          month: 'long', 
+          month: 'long',
           day: 'numeric'
         }),
-        reportId
+        reportId,
+        supportEmail: process.env.FROM_EMAIL || 'test@ditum.kz',
+        platformName: process.env.FROM_NAME || 'Career Growth Insights'
       });
 
       const mailOptions = {
         from: {
-          name: process.env.FROM_NAME || 'Платформа тестирования',
-          address: process.env.FROM_EMAIL || process.env.SMTP_USER
+          name: process.env.FROM_NAME || 'Career Growth Insights',
+          address: process.env.FROM_EMAIL || process.env.SMTP_USER || 'test@ditum.kz'
         },
         to: userInfo.email,
         subject: `Результаты тестирования - ${testInfo.projectName}`,
@@ -55,13 +77,14 @@ class EmailService {
         ]
       };
 
+      console.log(`Sending report email to: ${userInfo.email}`);
       const result = await this.transporter.sendMail(mailOptions);
       console.log('Report email sent successfully:', result.messageId);
       return result;
 
     } catch (error) {
       console.error('Failed to send report email:', error);
-      throw new Error('Failed to send email with report');
+      throw new Error(`Failed to send email with report: ${error.message}`);
     }
   }
 
@@ -69,32 +92,35 @@ class EmailService {
     try {
       const emailTemplate = this.getInvitationEmailTemplate();
       const compiledTemplate = handlebars.compile(emailTemplate);
-      
+
       const htmlContent = compiledTemplate({
         projectName: testData.projectName,
         testLink: testData.link,
         coachName: testData.coachName || 'Ваш коуч',
         description: testData.description || 'Пройдите профессиональное тестирование для оценки компетенций и мотивационных факторов.',
-        estimatedTime: '15-20 минут'
+        estimatedTime: '15-20 минут',
+        supportEmail: process.env.FROM_EMAIL || 'test@ditum.kz',
+        platformName: process.env.FROM_NAME || 'Career Growth Insights'
       });
 
       const mailOptions = {
         from: {
-          name: process.env.FROM_NAME || 'Платформа тестирования',
-          address: process.env.FROM_EMAIL || process.env.SMTP_USER
+          name: process.env.FROM_NAME || 'Career Growth Insights',
+          address: process.env.FROM_EMAIL || process.env.SMTP_USER || 'test@ditum.kz'
         },
         to: recipientEmail,
         subject: `Приглашение на тестирование - ${testData.projectName}`,
         html: htmlContent
       };
 
+      console.log(`Sending invitation email to: ${recipientEmail}`);
       const result = await this.transporter.sendMail(mailOptions);
       console.log('Invitation email sent successfully:', result.messageId);
       return result;
 
     } catch (error) {
       console.error('Failed to send invitation email:', error);
-      throw new Error('Failed to send invitation email');
+      throw new Error(`Failed to send invitation email: ${error.message}`);
     }
   }
 
@@ -102,7 +128,7 @@ class EmailService {
     try {
       const emailTemplate = this.getCoachNotificationTemplate();
       const compiledTemplate = handlebars.compile(emailTemplate);
-      
+
       const htmlContent = compiledTemplate({
         projectName: testData.projectName,
         testeeName: `${reportData.userInfo.firstName} ${reportData.userInfo.lastName}`,
@@ -115,26 +141,29 @@ class EmailService {
           minute: '2-digit'
         }),
         reportUrl: reportData.reportUrl,
-        dashboardUrl: `${process.env.FRONTEND_URL}/dashboard`
+        dashboardUrl: `${process.env.FRONTEND_URL || 'https://test.ditum.kz'}/dashboard`,
+        supportEmail: process.env.FROM_EMAIL || 'test@ditum.kz',
+        platformName: process.env.FROM_NAME || 'Career Growth Insights'
       });
 
       const mailOptions = {
         from: {
-          name: process.env.FROM_NAME || 'Платформа тестирования',
-          address: process.env.FROM_EMAIL || process.env.SMTP_USER
+          name: process.env.FROM_NAME || 'Career Growth Insights',
+          address: process.env.FROM_EMAIL || process.env.SMTP_USER || 'test@ditum.kz'
         },
         to: testData.coachEmail,
         subject: `Тест завершен - ${testData.projectName}`,
         html: htmlContent
       };
 
+      console.log(`Sending coach notification to: ${testData.coachEmail}`);
       const result = await this.transporter.sendMail(mailOptions);
       console.log('Coach notification sent successfully:', result.messageId);
       return result;
 
     } catch (error) {
       console.error('Failed to send coach notification:', error);
-      throw new Error('Failed to send coach notification');
+      throw new Error(`Failed to send coach notification: ${error.message}`);
     }
   }
 
@@ -171,12 +200,13 @@ class EmailService {
         .header h1 {
             color: #1e40af;
             margin: 0;
+            font-size: 28px;
         }
         .content {
             margin-bottom: 30px;
         }
         .info-box {
-            background: #f8fafc;
+            background: #f0f9ff;
             padding: 20px;
             border-radius: 8px;
             margin: 20px 0;
@@ -186,10 +216,25 @@ class EmailService {
             display: inline-block;
             background: #1e40af;
             color: white;
-            padding: 12px 24px;
+            padding: 15px 30px;
             text-decoration: none;
             border-radius: 6px;
-            margin: 10px 5px;
+            margin: 20px 0;
+            font-weight: bold;
+            text-align: center;
+        }
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .feature {
+            background: #f0f9ff;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+            border: 1px solid #0ea5e9;
         }
         .footer {
             text-align: center;
@@ -199,26 +244,19 @@ class EmailService {
             color: #6b7280;
             font-size: 14px;
         }
-        .attachment-info {
-            background: #f0f9ff;
-            padding: 15px;
-            border-radius: 6px;
-            border: 1px solid #0ea5e9;
-            margin: 20px 0;
-        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>📊 Результаты тестирования</h1>
-            <p>Ваш персональный отчет готов</p>
+            <h1>📊 Ваши результаты готовы!</h1>
+            <p>{{platformName}} - Персональная оценка компетенций</p>
         </div>
         
         <div class="content">
             <h2>Здравствуйте, {{userName}}!</h2>
             
-            <p>Спасибо за участие в тестировании <strong>{{projectName}}</strong>. Ваш персональный отчет готов и содержит детальный анализ ваших профессиональных компетенций и мотивационных факторов.</p>
+            <p>Спасибо за прохождение тестирования в рамках проекта <strong>{{projectName}}</strong>.</p>
             
             <div class="info-box">
                 <h3>📋 Информация о тестировании</h3>
@@ -227,36 +265,46 @@ class EmailService {
                 <p><strong>ID отчета:</strong> {{reportId}}</p>
             </div>
             
-            <div class="attachment-info">
-                <h3>📎 Вложение</h3>
-                <p>К этому письму прикреплен PDF-файл с вашим персональным отчетом. Отчет содержит:</p>
-                <ul>
-                    <li>Профиль мотивационных факторов</li>
-                    <li>Анализ сильных сторон</li>
-                    <li>Рекомендации по развитию</li>
-                    <li>Детальную визуализацию результатов</li>
-                    <li>Персональные выводы и заключение</li>
-                </ul>
+            <div class="features">
+                <div class="feature">
+                    <h4>📈 Профиль компетенций</h4>
+                    <p>Детальный анализ</p>
+                </div>
+                <div class="feature">
+                    <h4>🎯 Мотивационные факторы</h4>
+                    <p>Личные драйверы</p>
+                </div>
+                <div class="feature">
+                    <h4>💡 Рекомендации</h4>
+                    <p>План развития</p>
+                </div>
+                <div class="feature">
+                    <h4>📊 Benchmarking</h4>
+                    <p>Сравнение с эталоном</p>
+                </div>
             </div>
             
-            <h3>🎯 Что дальше?</h3>
-            <p>Рекомендуем:</p>
-            <ol>
-                <li>Внимательно изучить отчет</li>
-                <li>Обратить особое внимание на области развития</li>
-                <li>Обсудить результаты с вашим коучем или руководителем</li>
-                <li>Составить план личного развития на основе рекомендаций</li>
-            </ol>
+            <h3>📄 Персональный отчет</h3>
+            <p>Ваш детальный отчет с результатами тестирования прикреплен к этому письму. Отчет содержит:</p>
+            <ul>
+                <li>Профиль профессиональных компетенций</li>
+                <li>Анализ мотивационных факторов</li>
+                <li>Сильные стороны и области развития</li>
+                <li>Персональные рекомендации</li>
+                <li>План профессионального развития</li>
+            </ul>
             
             <div class="info-box">
                 <h3>🔒 Конфиденциальность</h3>
-                <p>Ваши результаты строго конфиденциальны. Отчет предназначен исключительно для вашего личного использования и профессионального развития.</p>
+                <p>Ваши данные защищены и используются исключительно для составления персонального отчета. 
+                Отчет предназначен исключительно для вашего личного использования и профессионального развития.</p>
             </div>
         </div>
         
         <div class="footer">
             <p>Если у вас есть вопросы по результатам тестирования, обратитесь к коучу, который предоставил вам доступ к тесту.</p>
-            <p>© 2024 Платформа тестирования профессиональных компетенций</p>
+            <p>📧 Поддержка: {{supportEmail}}</p>
+            <p>© 2024 {{platformName}} | test.ditum.kz</p>
         </div>
     </div>
 </body>
@@ -346,7 +394,7 @@ class EmailService {
     <div class="container">
         <div class="header">
             <h1>🎯 Приглашение на тестирование</h1>
-            <p>Оценка профессиональных компетенций</p>
+            <p>{{platformName}} - Персональная оценка компетенций</p>
         </div>
         
         <div class="content">
@@ -361,25 +409,33 @@ class EmailService {
                 <p><strong>Проект:</strong> {{projectName}}</p>
                 <p><strong>Время прохождения:</strong> {{estimatedTime}}</p>
                 <p><strong>Количество вопросов:</strong> 40</p>
-                <p><strong>Организатор:</strong> {{coachName}}</p>
+                <p><strong>Коуч:</strong> {{coachName}}</p>
             </div>
             
             <div class="features">
                 <div class="feature">
-                    <h4>⏱️ Быстро</h4>
-                    <p>15-20 минут</p>
+                    <h4>⏱️ {{estimatedTime}}</h4>
+                    <p>Время прохождения</p>
                 </div>
                 <div class="feature">
-                    <h4>🔒 Безопасно</h4>
-                    <p>GDPR соответствие</p>
+                    <h4>❓ 40 вопросов</h4>
+                    <p>Структурированный тест</p>
                 </div>
                 <div class="feature">
-                    <h4>💾 Автосохранение</h4>
-                    <p>Прогресс сохраняется</p>
+                    <h4>📊 Глубокий анализ</h4>
+                    <p>Детальные результаты</p>
                 </div>
                 <div class="feature">
-                    <h4>📊 Детальный отчет</h4>
-                    <p>PDF с результатами</p>
+                    <h4>🔒 Защита данных</h4>
+                    <p>Конфиденциальность</p>
+                </div>
+                <div class="feature">
+                    <h4>📄 PDF отчет</h4>
+                    <p>Персональные рекомендации</p>
+                </div>
+                <div class="feature">
+                    <h4>💾 Сохранение прогресса</h4>
+                    <p>Автоматически</p>
                 </div>
             </div>
             
@@ -388,22 +444,18 @@ class EmailService {
             </div>
             
             <div class="info-box">
-                <h3>ℹ️ Важная информация</h3>
-                <ul>
-                    <li>Тест можно проходить только один раз</li>
-                    <li>Прогресс автоматически сохраняется</li>
-                    <li>После завершения вы получите персональный отчет</li>
-                    <li>Результаты строго конфиденциальны</li>
-                </ul>
+                <h3>💡 Важная информация</h3>
+                <p>• Ваш прогресс автоматически сохраняется каждые 30 секунд</p>
+                <p>• Вы можете прервать тест и продолжить позже по той же ссылке</p>
+                <p>• После завершения вы получите детальный отчет на email</p>
+                <p>• Все данные защищены и конфиденциальны</p>
             </div>
-            
-            <h3>❓ Есть вопросы?</h3>
-            <p>Если у вас возникли вопросы о тестировании, обратитесь к {{coachName}}, который организовал это тестирование.</p>
         </div>
         
         <div class="footer">
-            <p>Это письмо отправлено автоматически. Пожалуйста, не отвечайте на него.</p>
-            <p>© 2024 Платформа тестирования профессиональных компетенций</p>
+            <p>Если у вас есть вопросы, обратитесь к вашему коучу: {{coachName}}</p>
+            <p>📧 Поддержка: {{supportEmail}}</p>
+            <p>© 2024 {{platformName}} | test.ditum.kz</p>
         </div>
     </div>
 </body>
@@ -437,12 +489,12 @@ class EmailService {
         }
         .header {
             text-align: center;
-            border-bottom: 3px solid #059669;
+            border-bottom: 3px solid #10b981;
             padding-bottom: 20px;
             margin-bottom: 30px;
         }
         .header h1 {
-            color: #059669;
+            color: #10b981;
             margin: 0;
         }
         .content {
@@ -453,17 +505,18 @@ class EmailService {
             padding: 20px;
             border-radius: 8px;
             margin: 20px 0;
-            border-left: 4px solid #059669;
+            border-left: 4px solid #10b981;
         }
         .button {
             display: inline-block;
             background: #1e40af;
             color: white;
-            padding: 12px 24px;
+            padding: 15px 30px;
             text-decoration: none;
             border-radius: 6px;
             margin: 10px 5px;
             font-weight: bold;
+            text-align: center;
         }
         .stats {
             display: grid;
@@ -542,8 +595,9 @@ class EmailService {
         </div>
         
         <div class="footer">
-            <p>Это автоматическое уведомление от платформы тестирования.</p>
-            <p>© 2024 Платформа тестирования профессиональных компетенций</p>
+            <p>Это автоматическое уведомление от {{platformName}}.</p>
+            <p>📧 Поддержка: {{supportEmail}}</p>
+            <p>© 2024 {{platformName}} | test.ditum.kz</p>
         </div>
     </div>
 </body>
@@ -553,12 +607,47 @@ class EmailService {
 
   async testConnection() {
     try {
+      console.log('Testing email service connection...');
       await this.transporter.verify();
-      console.log('Email service connection verified');
+      console.log('✅ Email service connection verified successfully');
       return true;
     } catch (error) {
-      console.error('Email service connection failed:', error);
+      console.error('❌ Email service connection failed:', error.message);
+      console.error('SMTP Config:', {
+        host: process.env.SMTP_HOST,
+        port: process.env.SMTP_PORT,
+        secure: process.env.SMTP_SECURE,
+        user: process.env.SMTP_USER ? '***@domain.com' : 'not set'
+      });
       return false;
+    }
+  }
+
+  // Метод для отправки тестового письма
+  async sendTestEmail(recipientEmail = 'test@example.com') {
+    try {
+      const mailOptions = {
+        from: {
+          name: process.env.FROM_NAME || 'Career Growth Insights',
+          address: process.env.FROM_EMAIL || process.env.SMTP_USER || 'test@ditum.kz'
+        },
+        to: recipientEmail,
+        subject: 'Тест отправки email - Career Growth Insights',
+        html: `
+          <h1>✅ Email сервис работает!</h1>
+          <p>Это тестовое письмо от платформы Career Growth Insights.</p>
+          <p>Время отправки: ${new Date().toLocaleString('ru-RU')}</p>
+          <p>Сервер: ${process.env.SMTP_HOST || 'не указан'}</p>
+        `
+      };
+
+      const result = await this.transporter.sendMail(mailOptions);
+      console.log('✅ Test email sent successfully:', result.messageId);
+      return result;
+
+    } catch (error) {
+      console.error('❌ Failed to send test email:', error);
+      throw error;
     }
   }
 }

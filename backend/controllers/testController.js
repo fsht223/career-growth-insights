@@ -1,5 +1,6 @@
 const { v4: uuidv4 } = require('uuid');
 const pool = require('../db/pool');
+const emailService = require('../services/emailService');
 
 const createTest = async (req, res) => {
   const client = await pool.connect();
@@ -36,6 +37,19 @@ const createTest = async (req, res) => {
 
     const test = result.rows[0];
     
+    // Send invitation email if testeeEmail is provided
+    if (testeeEmail) {
+      try {
+        await emailService.sendSimpleBilingualInvitation({
+          testLink: link,
+          recipientEmail: testeeEmail
+        });
+      } catch (emailErr) {
+        console.error('Failed to send invitation email:', emailErr);
+        // Do not fail test creation if email fails
+      }
+    }
+
     res.status(201).json({
       id: test.id,
       projectName: test.project_name,
