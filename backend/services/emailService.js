@@ -141,7 +141,7 @@ class EmailService {
           minute: '2-digit'
         }),
         reportUrl: reportData.reportUrl,
-        dashboardUrl: `${process.env.FRONTEND_URL || 'https://test.ditum.kz'}/dashboard`,
+        dashboardUrl: `${process.env.FRONTEND_URL || 'https://ditum.kz'}/dashboard`,
         supportEmail: process.env.FROM_EMAIL || 'test@ditum.kz',
         platformName: process.env.FROM_NAME || 'Career Growth Insights'
       });
@@ -304,7 +304,7 @@ class EmailService {
         <div class="footer">
             <p>Если у вас есть вопросы по результатам тестирования, обратитесь к коучу, который предоставил вам доступ к тесту.</p>
             <p>📧 Поддержка: {{supportEmail}}</p>
-            <p>© 2024 {{platformName}} | test.ditum.kz</p>
+            <p>© 2024 {{platformName}} | ditum.kz</p>
         </div>
     </div>
 </body>
@@ -455,7 +455,7 @@ class EmailService {
         <div class="footer">
             <p>Если у вас есть вопросы, обратитесь к вашему коучу: {{coachName}}</p>
             <p>📧 Поддержка: {{supportEmail}}</p>
-            <p>© 2024 {{platformName}} | test.ditum.kz</p>
+            <p>© 2024 {{platformName}} | ditum.kz</p>
         </div>
     </div>
 </body>
