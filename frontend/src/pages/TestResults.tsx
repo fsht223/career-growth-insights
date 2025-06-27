@@ -6,8 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Download, Mail, Star, Award, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import ApiService from '@/services/api';
+import { useTranslation } from '@/hooks/useTranslation';
+import { useMotivationalFactorTranslation } from '@/utils/translationUtils';
 
 const TestResults = () => {
+  const { t } = useTranslation();
+  const { translateMotivationalFactor } = useMotivationalFactorTranslation();
   const { testId } = useParams();
   const location = useLocation();
   const [userData, setUserData] = useState<any>(null);
@@ -36,8 +40,8 @@ const TestResults = () => {
     const resultId = location.state?.resultId || localStorage.getItem('lastResultId');
     if (!resultId) {
       toast({
-        title: "Ошибка",
-        description: "ID отчета не найден",
+        title: t('testResults.error'),
+        description: t('testResults.reportIdNotFound'),
         variant: "destructive",
       });
       return;
@@ -58,8 +62,8 @@ const TestResults = () => {
       window.URL.revokeObjectURL(url);
       
       toast({
-        title: "Загрузка завершена",
-        description: "PDF отчет успешно скачан",
+        title: t('testResults.downloadComplete'),
+        description: t('testResults.downloadCompleteDescription'),
       });
       
     } catch (error: any) {
@@ -67,14 +71,14 @@ const TestResults = () => {
       
       if (error.message.includes('still being generated')) {
         toast({
-          title: "PDF еще создается",
-          description: "Пожалуйста, подождите несколько секунд",
+          title: t('testResults.stillGenerating'),
+          description: t('testResults.stillGeneratingDescription'),
           variant: "destructive",
         });
       } else {
         toast({
-          title: "Ошибка загрузки",
-          description: "Не удалось скачать PDF отчет",
+          title: t('testResults.downloadError'),
+          description: t('testResults.downloadErrorDescription'),
           variant: "destructive",
         });
       }
@@ -86,8 +90,8 @@ const TestResults = () => {
   const handleSendEmail = async () => {
     setEmailSent(true);
     toast({
-      title: "Отчет отправлен",
-      description: `Отчет отправлен на email: ${userData?.email}`,
+      title: t('testResults.reportSent'),
+      description: t('testResults.reportSentDescription', { email: userData?.email }),
     });
   };
 
@@ -96,6 +100,7 @@ const TestResults = () => {
     ? Object.keys(testResults.groupScores)
         .map((btn) => ({
           name: btn,
+          translatedName: translateMotivationalFactor(btn),
           score: testResults.groupScores[btn],
           benchmark: testResults.goldenLine[btn] || 1,
           percentage: testResults.percentages[btn] || 0,
@@ -111,9 +116,9 @@ const TestResults = () => {
   };
 
   const getStatusText = (percentage: number) => {
-    if (percentage < 90) return "Potential development area";
-    if (percentage > 110) return "Potential development area";
-    return "Aligned with benchmark";
+    if (percentage < 90) return t('testResults.potentialDevelopment');
+    if (percentage > 110) return t('testResults.potentialDevelopment');
+    return t('testResults.alignedBenchmark');
   };
 
   const getBarColor = (percentage: number) => {
@@ -127,25 +132,25 @@ const TestResults = () => {
       case 'generating':
         return {
           icon: <Loader2 className="w-4 h-4 animate-spin" />,
-          text: 'Генерация PDF...',
+          text: t('testResults.status.generating'),
           color: 'text-blue-600'
         };
       case 'ready':
         return {
           icon: <CheckCircle className="w-4 h-4" />,
-          text: 'PDF готов',
+          text: t('testResults.status.ready'),
           color: 'text-green-600'
         };
       case 'failed':
         return {
           icon: <AlertCircle className="w-4 h-4" />,
-          text: 'Ошибка создания PDF',
+          text: t('testResults.status.failed'),
           color: 'text-red-600'
         };
       default:
         return {
           icon: <Loader2 className="w-4 h-4 animate-spin" />,
-          text: 'Обработка...',
+          text: t('testResults.status.processing'),
           color: 'text-gray-600'
         };
     }
@@ -156,7 +161,7 @@ const TestResults = () => {
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-900 mx-auto mb-4"></div>
-          <p className="text-slate-600">Обработка результатов...</p>
+          <p className="text-slate-600">{t('testResults.processingResults')}</p>
         </div>
       </div>
     );
@@ -176,7 +181,7 @@ const TestResults = () => {
           <div className="text-center">
             <div className="flex items-center justify-center space-x-3 mb-2">
               <Award className="w-8 h-8 text-yellow-600" />
-              <h1 className="text-2xl font-bold text-slate-800">Результаты тестирования</h1>
+              <h1 className="text-2xl font-bold text-slate-800">{t('testResults.testingResults')}</h1>
             </div>
             <p className="text-slate-600">
               {firstName} {lastName} • {profession}
@@ -192,9 +197,9 @@ const TestResults = () => {
             <div className="flex items-center space-x-3">
               <CheckCircle className="w-6 h-6 text-green-600" />
               <div>
-                <h2 className="text-lg font-semibold text-green-800">Тестирование завершено!</h2>
+                <h2 className="text-lg font-semibold text-green-800">{t('testResults.completion')}</h2>
                 <p className="text-green-700">
-                  Спасибо за участие. Ваш персональный отчет готов к просмотру.
+                  {t('testResults.personalReport')}
                 </p>
               </div>
             </div>
@@ -209,13 +214,13 @@ const TestResults = () => {
                 {statusDisplay.icon}
               </div>
               <div>
-                <h3 className="font-semibold text-blue-800">Статус PDF отчета</h3>
+                <h3 className="font-semibold text-blue-800">{t('testResults.pdfStatus')}</h3>
                 <p className={`${statusDisplay.color} font-medium`}>
                   {statusDisplay.text}
                 </p>
                 {pdfStatus === 'generating' && (
                   <p className="text-blue-600 text-sm mt-1">
-                    Это может занять 1-2 минуты. Страница автоматически обновится.
+                    {t('testResults.pdfGenerating')}
                   </p>
                 )}
               </div>
@@ -226,12 +231,12 @@ const TestResults = () => {
         {/* Results Chart - Main Section */}
         <Card className="mb-8 shadow-xl border-0">
           <CardHeader className="bg-gradient-to-r from-blue-900 to-blue-800 text-white rounded-t-lg">
-            <CardTitle className="text-xl text-center">Профиль компетенций</CardTitle>
+            <CardTitle className="text-xl text-center">{t('testResults.competencyProfile')}</CardTitle>
           </CardHeader>
           <CardContent className="p-8">
             {/* Single Benchmark label at the top */}
             <div className="text-center">
-              <span className="text-m font-medium text-slate-800">Benchmark</span>
+              <span className="text-m font-medium text-slate-800">{t('testResults.benchmark')}</span>
             </div>
             <div className="space-y-6">
               {motivationButtons.map((result, index) => (
@@ -239,7 +244,7 @@ const TestResults = () => {
                   {/* Header with name, star, and percentage */}
                   <div className="flex justify-between items-center">
                     <div className="flex items-center space-x-2">
-                      <span className="font-medium text-slate-800">{result.name}</span>
+                      <span className="font-medium text-slate-800">{result.translatedName}</span>
                       {result.isStarred && <Star className="w-4 h-4 text-yellow-500 fill-current" />}
                     </div>
                     <div className="text-right">
@@ -278,7 +283,7 @@ const TestResults = () => {
                       <span style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>
                         100%
                       </span>
-                      <span>Max: 200%</span>
+                      <span>{t('testResults.max')}</span>
                     </div>
                   </div>
                 </div>
@@ -287,23 +292,23 @@ const TestResults = () => {
 
             {/* Legend */}
             <div className="mt-8 p-4 bg-slate-50 rounded-lg">
-              <h3 className="font-semibold text-slate-800 mb-3">Легенда:</h3>
+              <h3 className="font-semibold text-slate-800 mb-3">{t('testResults.legend')}</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
                 <div className="flex items-center space-x-2">
                   <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                  <span>Выбранные мотивационные факторы</span>
+                  <span>{t('testResults.selectedMotivational')}</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <div className="w-4 h-2 bg-green-500 rounded"></div>
-                  <span>Соответствует эталону (90-110%)</span>
+                  <span>{t('testResults.matchesBenchmark')}</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <div className="w-4 h-2 bg-red-500 rounded"></div>
-                  <span>Область развития (&lt;90% или &gt;110%)</span>
+                  <span>{t('testResults.developmentArea')}</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <div className="w-1 h-4 bg-slate-900 rounded-sm"></div>
-                  <span>Benchmark = 100%</span>
+                  <span>{t('testResults.benchmarkLine')}</span>
                 </div>
               </div>
             </div>
@@ -313,13 +318,13 @@ const TestResults = () => {
         {/* Profile Averages - Updated to match main section style */}
         <Card className="mb-8 shadow-xl border-0">
           <CardHeader className="bg-gradient-to-r from-blue-900 to-blue-800 text-white rounded-t-lg">
-            <CardTitle className="text-xl text-center">Профили мотивации</CardTitle>
+            <CardTitle className="text-xl text-center">{t('testResults.motivationProfiles')}</CardTitle>
           </CardHeader>
           <CardContent className="p-8">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {testResults.profileAverages && Object.entries(testResults.profileAverages).map(([profile, value]) => (
                 <div key={profile} className="text-center">
-                  <div className="font-semibold text-slate-800 mb-2">{profile}</div>
+                  <div className="font-semibold text-slate-800 mb-2">{translateMotivationalFactor(profile)}</div>
                   <div className="text-3xl font-bold text-blue-900 mb-2">{Math.round(value as number)}%</div>
                   <div className="w-full bg-slate-200 rounded-full h-2">
                     <div 
@@ -337,14 +342,14 @@ const TestResults = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
           <Card className="shadow-xl border-0">
             <CardHeader className="bg-gradient-to-r from-blue-900 to-blue-800 text-white rounded-t-lg">
-              <CardTitle className="text-lg text-center">Согласованность (Consistency)</CardTitle>
+              <CardTitle className="text-lg text-center">{t('testResults.consistencyTitle')}</CardTitle>
             </CardHeader>
             <CardContent className="p-8 text-center">
               <div className="text-3xl font-bold text-blue-900 mb-2">
                 {Math.round(testResults.consistency || 0)}%
               </div>
               <div className="text-slate-600 text-sm mb-4">
-                Согласованность ответов на повторяющиеся вопросы
+                {t('testResults.consistencyDescription')}
               </div>
               <div className="w-full bg-slate-200 rounded-full h-2">
                 <div 
@@ -357,14 +362,14 @@ const TestResults = () => {
           
           <Card className="shadow-xl border-0">
             <CardHeader className="bg-gradient-to-r from-blue-900 to-blue-800 text-white rounded-t-lg">
-              <CardTitle className="text-lg text-center">Awareness Level</CardTitle>
+              <CardTitle className="text-lg text-center">{t('testResults.awarenessTitle')}</CardTitle>
             </CardHeader>
             <CardContent className="p-8 text-center">
               <div className="text-3xl font-bold text-blue-900 mb-2">
                 {testResults.awarenessLevel || 0}%
               </div>
               <div className="text-slate-600 text-sm mb-4">
-                Осознанность выбора мотивации
+                {t('testResults.awarenessDescription')}
               </div>
               <div className="w-full bg-slate-200 rounded-full h-2">
                 <div 
@@ -380,12 +385,12 @@ const TestResults = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
           <Card className="shadow-xl border-0">
             <CardHeader className="bg-gradient-to-r from-blue-900 to-blue-800 text-white rounded-t-lg">
-              <CardTitle className="text-lg text-center">Внутренняя/Внешняя мотивация</CardTitle>
+              <CardTitle className="text-lg text-center">{t('testResults.innerOuterTitle')}</CardTitle>
             </CardHeader>
             <CardContent className="p-8">
               <div className="space-y-6">
                 <div className="flex justify-between items-center">
-                  <span className="font-medium text-slate-800">Внутренняя</span>
+                  <span className="font-medium text-slate-800">{t('testResults.inner')}</span>
                   <span className="font-bold text-lg text-blue-900">
                     {Math.round(testResults.innerOuter?.inner || 0)}%
                   </span>
@@ -398,7 +403,7 @@ const TestResults = () => {
                 </div>
                 
                 <div className="flex justify-between items-center">
-                  <span className="font-medium text-slate-800">Внешняя</span>
+                  <span className="font-medium text-slate-800">{t('testResults.outer')}</span>
                   <span className="font-bold text-lg text-blue-900">
                     {Math.round(testResults.innerOuter?.outer || 0)}%
                   </span>
@@ -415,12 +420,12 @@ const TestResults = () => {
           
           <Card className="shadow-xl border-0">
             <CardHeader className="bg-gradient-to-r from-blue-900 to-blue-800 text-white rounded-t-lg">
-              <CardTitle className="text-lg text-center">Reasoning</CardTitle>
+              <CardTitle className="text-lg text-center">{t('testResults.reasoningTitle')}</CardTitle>
             </CardHeader>
             <CardContent className="p-8">
               <div className="space-y-6">
                 <div className="flex justify-between items-center">
-                  <span className="font-medium text-slate-800">Интуиция</span>
+                  <span className="font-medium text-slate-800">{t('testResults.intuition')}</span>
                   <span className="font-bold text-lg text-blue-900">
                     {Math.round(testResults.reasoning?.intuition || 0)}%
                   </span>
@@ -433,7 +438,7 @@ const TestResults = () => {
                 </div>
                 
                 <div className="flex justify-between items-center">
-                  <span className="font-medium text-slate-800">Логика</span>
+                  <span className="font-medium text-slate-800">{t('testResults.logic')}</span>
                   <span className="font-bold text-lg text-blue-900">
                     {Math.round(testResults.reasoning?.beingLogical || 0)}%
                   </span>
@@ -453,7 +458,7 @@ const TestResults = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
           <Card className="shadow-xl border-0">
             <CardHeader className="bg-gradient-to-r from-green-700 to-green-600 text-white rounded-t-lg">
-              <CardTitle className="text-lg text-center">Сильные стороны</CardTitle>
+              <CardTitle className="text-lg text-center">{t('testResults.strengthsTitle')}</CardTitle>
             </CardHeader>
             <CardContent className="p-8">
               {testResults.strengths && testResults.strengths.length > 0 ? (
@@ -461,13 +466,13 @@ const TestResults = () => {
                   {testResults.strengths.map((btn: string) => (
                     <div key={btn} className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
                       <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
-                      <span className="font-medium text-green-800">{btn}</span>
+                      <span className="font-medium text-green-800">{translateMotivationalFactor(btn)}</span>
                     </div>
                   ))}
                 </div>
               ) : (
                 <div className="text-center text-slate-600 py-8">
-                  Нет выраженных сильных сторон
+                  {t('testResults.noStrengths')}
                 </div>
               )}
             </CardContent>
@@ -475,21 +480,21 @@ const TestResults = () => {
           
           <Card className="shadow-xl border-0">
             <CardHeader className="bg-gradient-to-r from-red-700 to-red-600 text-white rounded-t-lg">
-              <CardTitle className="text-lg text-center">Зоны развития</CardTitle>
+              <CardTitle className="text-lg text-center">{t('testResults.developmentAreasTitle')}</CardTitle>
             </CardHeader>
             <CardContent className="p-8">
               {testResults.developmentAreas && testResults.developmentAreas.length > 0 ? (
                 <div className="space-y-3">
                   {testResults.developmentAreas.map((area: any) => (
                     <div key={area.btn} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
-                      <span className="font-medium text-red-800">{area.btn}</span>
+                      <span className="font-medium text-red-800">{translateMotivationalFactor(area.btn)}</span>
                       <span className="text-red-600 font-bold">{Math.round(area.percent)}%</span>
                     </div>
                   ))}
                 </div>
               ) : (
                 <div className="text-center text-slate-600 py-8">
-                  Нет выраженных зон развития
+                  {t('testResults.noDevelopmentAreas')}
                 </div>
               )}
             </CardContent>
@@ -499,7 +504,7 @@ const TestResults = () => {
         {/* Action Buttons */}
         <Card className="shadow-xl border-0">
           <CardHeader>
-            <CardTitle className="text-xl text-slate-800">Получить результаты</CardTitle>
+            <CardTitle className="text-xl text-slate-800">{t('testResults.getResults')}</CardTitle>
           </CardHeader>
           <CardContent className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -511,12 +516,12 @@ const TestResults = () => {
                 {downloading ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Скачивание...
+                    {t('testResults.downloading')}
                   </>
                 ) : (
                   <>
                     <Download className="w-4 h-4 mr-2" />
-                    Скачать PDF отчет
+                    {t('testResults.download')}
                   </>
                 )}
               </Button>
@@ -528,14 +533,13 @@ const TestResults = () => {
                 className={emailSent ? "text-green-600 border-green-600" : "bg-rose-600 hover:bg-rose-700 text-white py-3"}
               >
                 <Mail className="w-4 h-4 mr-2" />
-                {emailSent ? "Отправлено на email" : "Отправить на email"}
+                {emailSent ? t('testResults.sentToEmail') : t('testResults.sendToEmail')}
               </Button>
             </div>
             
             <div className="mt-6 p-4 bg-blue-50 rounded-lg">
               <p className="text-sm text-blue-800">
-                <strong>Важно:</strong> Результаты будут доступны для скачивания в течение 30 дней. 
-                Рекомендуем сохранить отчет или отправить его на email.
+                <strong>{t('testResults.important')}</strong> {t('testResults.resultsAvailable')}
               </p>
             </div>
           </CardContent>

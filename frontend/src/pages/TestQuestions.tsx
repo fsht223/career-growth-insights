@@ -9,6 +9,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { CheckCircle, ArrowRight, ArrowLeft, Save, AlertTriangle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import ApiService from '@/services/api';
+import { useTranslation } from '@/hooks/useTranslation';
+import { useQuestionTranslation, useMotivationalFactorTranslation, useOptionTextTranslation } from '@/utils/translationUtils';
 
 interface Question {
   id: number;
@@ -23,6 +25,10 @@ interface Question {
 }
 
 const TestQuestions = () => {
+  const { t } = useTranslation();
+  const { translateQuestionText } = useQuestionTranslation();
+  const { translateMotivationalFactor } = useMotivationalFactorTranslation();
+  const { translateOptionText } = useOptionTextTranslation();
   const { testId } = useParams();
   const navigate = useNavigate();
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -100,8 +106,8 @@ const TestQuestions = () => {
     } catch (error) {
       console.error('Failed to load test data:', error);
       toast({
-        title: "Ошибка загрузки",
-        description: "Не удалось загрузить данные теста",
+        title: t('testQuestions.error'),
+        description: t('testQuestions.error'),
         variant: "destructive",
       });
       navigate(`/test/${testId}`);
@@ -164,8 +170,8 @@ const TestQuestions = () => {
     } catch (error) {
       console.error('Failed to save progress:', error);
       toast({
-        title: "Ошибка сохранения",
-        description: "Не удалось сохранить прогресс",
+        title: t('testQuestions.saveError'),
+        description: t('testQuestions.saveErrorDescription'),
         variant: "destructive",
       });
     } finally {
@@ -189,8 +195,8 @@ const TestQuestions = () => {
       setMotivationalButtons(prev => [...prev, option]);
     } else {
       toast({
-        title: "Максимум 5 вариантов",
-        description: "Вы можете выбрать не более 5 мотивационных факторов",
+        title: t('testQuestions.maxOptions'),
+        description: t('testQuestions.maxOptionsDescription'),
         variant: "destructive",
       });
     }
@@ -201,8 +207,8 @@ const TestQuestions = () => {
       // Regular questions validation
       if (!selectedFirst || !selectedSecond) {
         toast({
-          title: "Выберите два варианта",
-          description: "Пожалуйста, выберите первый и второй варианты ответа",
+          title: t('testQuestions.selectTwo'),
+          description: t('testQuestions.selectTwo'),
           variant: "destructive",
         });
         return;
@@ -232,8 +238,8 @@ const TestQuestions = () => {
       // Motivational selection validation
       if (motivationalButtons.length !== 5) {
         toast({
-          title: "Выберите 5 вариантов",
-          description: "Необходимо выбрать ровно 5 мотивационных факторов",
+          title: t('testQuestions.selectFive'),
+          description: t('testQuestions.selectFive'),
           variant: "destructive",
         });
         return;
@@ -292,8 +298,8 @@ const TestQuestions = () => {
     } catch (error) {
       console.error('Failed to complete test:', error);
       toast({
-        title: "Ошибка завершения",
-        description: "Не удалось завершить тест. Попробуйте еще раз.",
+        title: t('testQuestions.completionError'),
+        description: t('testQuestions.completionErrorDescription'),
         variant: "destructive",
       });
     } finally {
@@ -308,8 +314,8 @@ const TestQuestions = () => {
   const confirmExit = async () => {
     await saveProgress(true);
     toast({
-      title: "Прогресс сохранен",
-      description: "Вы можете продолжить тест позже, перейдя по той же ссылке",
+      title: t('testQuestions.progressSaved'),
+      description: t('testQuestions.progressSavedDescription'),
     });
     navigate('/');
   };
@@ -319,7 +325,7 @@ const TestQuestions = () => {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-900 mx-auto mb-4"></div>
-          <p className="text-slate-600">Загрузка теста...</p>
+          <p className="text-slate-600">{t('testQuestions.loadingTest')}</p>
         </div>
       </div>
     );
@@ -331,10 +337,10 @@ const TestQuestions = () => {
         <Card className="max-w-md">
           <CardContent className="p-6 text-center">
             <AlertTriangle className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
-            <h2 className="text-xl font-bold text-slate-800 mb-2">Тест не найден</h2>
-            <p className="text-slate-600 mb-4">Указанный тест недоступен или был удален.</p>
+            <h2 className="text-xl font-bold text-slate-800 mb-2">{t('testQuestions.testNotFound')}</h2>
+            <p className="text-slate-600 mb-4">{t('testQuestions.testNotFoundDescription')}</p>
             <Button onClick={() => navigate('/')}>
-              Вернуться на главную
+              {t('testQuestions.returnHome')}
             </Button>
           </CardContent>
         </Card>
@@ -355,7 +361,7 @@ const TestQuestions = () => {
           <div className="flex justify-between items-center mb-4">
             <div className="flex items-center space-x-2">
               <span className="text-sm text-slate-600">
-                Вопрос {currentQuestion + 1} из {totalQuestions}
+                {t('testQuestions.questionOf', { current: currentQuestion + 1, total: totalQuestions })}
               </span>
               {saving && <Save className="w-4 h-4 text-blue-500 animate-pulse" />}
             </div>
@@ -367,24 +373,24 @@ const TestQuestions = () => {
                 disabled={saving}
               >
                 <Save className="w-4 h-4 mr-1" />
-                Сохранить
+                {t('testQuestions.save')}
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleExitTest}
               >
-                Выйти
+                {t('testQuestions.exit')}
               </Button>
             </div>
           </div>
           
           <Progress value={progress} className="h-3 bg-slate-200" />
           <div className="flex justify-between text-sm text-slate-600 mt-2">
-            <span>{Math.round(progress)}% завершено</span>
+            <span>{t('testQuestions.completed', { percent: Math.round(progress) })}</span>
             <span>
-              {currentQ?.isRepeat && "Контрольный вопрос"}
-              {isMotivationalQuestion && "Финальный выбор"}
+              {currentQ?.isRepeat && t('testQuestions.controlQuestion')}
+              {isMotivationalQuestion && t('testQuestions.finalChoice')}
             </span>
           </div>
         </div>
@@ -393,7 +399,7 @@ const TestQuestions = () => {
         <Card className="shadow-xl border-0 mb-8">
           <CardContent className="p-8">
             <h2 className="text-2xl font-bold text-slate-800 mb-8 text-center">
-              {currentQ?.text}
+              {translateQuestionText(currentQ?.text || '')}
             </h2>
 
             {!isMotivationalQuestion ? (
@@ -402,7 +408,7 @@ const TestQuestions = () => {
                 {/* First Selection */}
                 <div className="mb-8">
                   <h3 className="text-lg font-semibold text-slate-700 mb-4">
-                    Выберите первый наиболее подходящий вариант:
+                    {t('testQuestions.selectFirst')}
                   </h3>
                   <div className="space-y-3">
                     {currentQ?.options.map((option) => (
@@ -420,7 +426,7 @@ const TestQuestions = () => {
                           {selectedFirst === option.id && (
                             <CheckCircle className="w-5 h-5" />
                           )}
-                          <span>{option.text}</span>
+                          <span>{translateOptionText(option.text)}</span>
                         </div>
                       </Button>
                     ))}
@@ -431,7 +437,7 @@ const TestQuestions = () => {
                 {selectedFirst && (
                   <div className="mb-8">
                     <h3 className="text-lg font-semibold text-slate-700 mb-4">
-                      Теперь выберите второй наиболее подходящий вариант:
+                      {t('testQuestions.selectSecond')}
                     </h3>
                     <div className="space-y-3">
                       {currentQ?.options
@@ -451,7 +457,7 @@ const TestQuestions = () => {
                               {selectedSecond === option.id && (
                                 <CheckCircle className="w-5 h-5" />
                               )}
-                              <span>{option.text}</span>
+                              <span>{translateOptionText(option.text)}</span>
                             </div>
                           </Button>
                         ))}
@@ -475,7 +481,7 @@ const TestQuestions = () => {
                         htmlFor={option.id} 
                         className="text-sm font-medium cursor-pointer flex-1"
                       >
-                        {option.text}
+                        {translateMotivationalFactor(option.text)}
                       </label>
                     </div>
                   ))}
@@ -483,7 +489,7 @@ const TestQuestions = () => {
 
                 <div className="text-center">
                   <p className="text-sm text-slate-600 mb-4">
-                    Выбрано: {motivationalButtons.length} из 5
+                    {t('testQuestions.selected', { count: motivationalButtons.length })}
                   </p>
                 </div>
               </>
@@ -498,7 +504,7 @@ const TestQuestions = () => {
                 className="px-6"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Назад
+                {t('testQuestions.previous')}
               </Button>
 
               <Button
@@ -509,7 +515,7 @@ const TestQuestions = () => {
                 }
                 className="bg-gradient-to-r from-blue-900 to-blue-800 hover:from-blue-800 hover:to-blue-700 text-white px-6"
               >
-                {currentQuestion === 39 ? 'Завершить тест' : 'Далее'}
+                {currentQuestion === 39 ? t('testQuestions.completeTest') : t('testQuestions.next')}
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </div>
@@ -521,16 +527,15 @@ const TestQuestions = () => {
       <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Выйти из теста?</AlertDialogTitle>
+            <AlertDialogTitle>{t('testQuestions.exitDialogTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Ваш прогресс будет сохранен, и вы сможете продолжить тест позже, 
-              перейдя по той же ссылке.
+              {t('testQuestions.exitDialogDescription')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogCancel>{t('testQuestions.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={confirmExit}>
-              Сохранить и выйти
+              {t('testQuestions.saveAndExit')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
