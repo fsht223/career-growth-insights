@@ -10,6 +10,8 @@ const testRoutes = require('./routes/tests');
 const sessionRoutes = require('./routes/sessions');
 const reportRoutes = require('./routes/reports');
 const dashboardRoutes = require('./routes/dashboard');
+const adminRoutes = require('./routes/admin');
+const activationRoutes = require('./routes/activation');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -38,6 +40,8 @@ app.use('/api/tests', testRoutes);
 app.use('/api/test', sessionRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/admin', require('./routes/admin'));
+app.use('/api/auth', require('./routes/activation'));
 
 // Health check
 app.get('/health', (req, res) => {
@@ -47,6 +51,9 @@ app.get('/health', (req, res) => {
     environment: process.env.NODE_ENV
   });
 });
+
+
+
 
 // Error handling middleware
 app.use((err, req, res, next) => {
