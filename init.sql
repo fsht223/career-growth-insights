@@ -1,5 +1,5 @@
--- ===== DITUM.KZ DATABASE INITIALIZATION =====
--- PostgreSQL Database Setup для Motivation Testing Platform
+-- ===== CAREER GROWTH INSIGHTS - DITUM.KZ DATABASE =====
+-- PostgreSQL Database Setup для Career Growth Insights Platform
 
 -- Установка настроек базы данных
 SET client_encoding = 'UTF8';
@@ -13,9 +13,11 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 -- Логирование инициализации
 DO $$
 BEGIN
-    RAISE NOTICE '🚀 Starting Ditum.kz database initialization...';
+    RAISE NOTICE '🚀 Starting Career Growth Insights database initialization...';
     RAISE NOTICE '⏰ Timestamp: %', CURRENT_TIMESTAMP;
     RAISE NOTICE '🌍 Timezone: Asia/Almaty';
+    RAISE NOTICE '🏢 Platform: Career Growth Insights';
+    RAISE NOTICE '🌐 Domain: ditum.kz';
 END $$;
 
 -- ===== ПОЛЬЗОВАТЕЛИ И АУТЕНТИФИКАЦИЯ =====
@@ -151,17 +153,6 @@ CREATE TABLE IF NOT EXISTS audit_log (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
                                              );
 
--- Таблица статистики
-CREATE TABLE IF NOT EXISTS statistics (
-                                          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    metric_name VARCHAR(100) NOT NULL,
-    metric_value DECIMAL(15,4),
-    metric_data JSONB DEFAULT '{}',
-    period_start TIMESTAMP WITH TIME ZONE,
-    period_end TIMESTAMP WITH TIME ZONE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-                             );
-
 -- ===== ИНДЕКСЫ ДЛЯ ОПТИМИЗАЦИИ =====
 
 -- Пользователи
@@ -179,19 +170,10 @@ CREATE INDEX IF NOT EXISTS idx_tests_coach_email ON tests(coach_email);
 CREATE INDEX IF NOT EXISTS idx_test_sessions_test_id ON test_sessions(test_id);
 CREATE INDEX IF NOT EXISTS idx_test_sessions_email ON test_sessions(email);
 CREATE INDEX IF NOT EXISTS idx_test_sessions_completed ON test_sessions(completed);
-CREATE INDEX IF NOT EXISTS idx_test_sessions_started_at ON test_sessions(started_at DESC);
 
 -- Результаты
 CREATE INDEX IF NOT EXISTS idx_test_results_test_id ON test_results(test_id);
 CREATE INDEX IF NOT EXISTS idx_test_results_email ON test_results(testee_email);
-CREATE INDEX IF NOT EXISTS idx_test_results_completed_at ON test_results(completed_at DESC);
-CREATE INDEX IF NOT EXISTS idx_test_results_pdf_status ON test_results(pdf_status);
-
--- Аудит
-CREATE INDEX IF NOT EXISTS idx_audit_log_user_id ON audit_log(user_id);
-CREATE INDEX IF NOT EXISTS idx_audit_log_action ON audit_log(action);
-CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON audit_log(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_audit_log_resource ON audit_log(resource_type, resource_id);
 
 -- ===== ФУНКЦИИ И ТРИГГЕРЫ =====
 
@@ -217,226 +199,57 @@ CREATE TRIGGER update_tests_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
-DROP TRIGGER IF EXISTS update_test_sessions_updated_at ON test_sessions;
-CREATE TRIGGER update_test_sessions_updated_at
-    BEFORE UPDATE ON test_sessions
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
-
--- Функция для логирования изменений пользователей
-CREATE OR REPLACE FUNCTION log_user_changes()
-RETURNS TRIGGER AS $$
-BEGIN
-    IF TG_OP = 'UPDATE' THEN
-        INSERT INTO audit_log (user_id, action, resource_type, resource_id, old_values, new_values)
-        VALUES (NEW.id, 'user_updated', 'user', NEW.id::text, to_jsonb(OLD), to_jsonb(NEW));
-    ELSIF TG_OP = 'INSERT' THEN
-        INSERT INTO audit_log (user_id, action, resource_type, resource_id, new_values)
-        VALUES (NEW.id, 'user_created', 'user', NEW.id::text, to_jsonb(NEW));
-END IF;
-RETURN NULL;
-END;
-$$ language 'plpgsql';
-
--- Триггер для логирования изменений пользователей
-DROP TRIGGER IF EXISTS users_audit_trigger ON users;
-CREATE TRIGGER users_audit_trigger
-    AFTER INSERT OR UPDATE ON users
-                        FOR EACH ROW
-                        EXECUTE FUNCTION log_user_changes();
-
 -- ===== НАЧАЛЬНЫЕ ДАННЫЕ =====
 
 -- Вставка системных настроек
 INSERT INTO system_settings (setting_key, setting_value, setting_type, description, is_public) VALUES
-                                                                                                   ('platform_name', 'Ditum Career Development Platform', 'string', 'Название платформы', true),
+                                                                                                   ('platform_name', 'Career Growth Insights', 'string', 'Название платформы', true),
                                                                                                    ('company_name', 'Ditum', 'string', 'Название компании', true),
                                                                                                    ('default_language', 'ru', 'string', 'Язык по умолчанию', true),
                                                                                                    ('supported_languages', '["ru", "kz", "en"]', 'json', 'Поддерживаемые языки', true),
                                                                                                    ('max_tests_per_coach', '100', 'number', 'Максимум тестов на коуча', false),
                                                                                                    ('test_expiry_days', '30', 'number', 'Срок действия теста в днях', false),
-                                                                                                   ('enable_analytics', 'true', 'boolean', 'Включить аналитику', false),
-                                                                                                   ('email_notifications', 'true', 'boolean', 'Email уведомления', false),
-                                                                                                   ('maintenance_mode', 'false', 'boolean', 'Режим обслуживания', false)
+                                                                                                   ('enable_analytics', 'true', 'boolean', 'Включить аналитику', false)
     ON CONFLICT (setting_key) DO NOTHING;
 
--- Создание демонстрационных пользователей
+-- Создание демонстрационных пользователей для Career Growth Insights
 INSERT INTO users (email, password_hash, first_name, last_name, role, company, is_active, email_verified) VALUES
-                                                                                                              ('admin@ditum.kz', '$2a$10$rX8gDUlYN5kFd6z1WzKjuebKsNbAyDxEr7YFJR5.ABc6LdWLuJnFW', 'Администратор', 'Ditum', 'admin', 'Ditum', true, true),
-                                                                                                              ('coach@ditum.kz', '$2a$10$rX8gDUlYN5kFd6z1WzKjuebKsNbAyDxEr7YFJR5.ABc6LdWLuJnFW', 'Коуч', 'Демо', 'coach', 'Ditum', true, true),
+                                                                                                              ('admin@ditum.kz', '$2a$10$rX8gDUlYN5kFd6z1WzKjuebKsNbAyDxEr7YFJR5.ABc6LdWLuJnFW', 'Администратор', 'Career Growth', 'admin', 'Ditum', true, true),
+                                                                                                              ('coach@ditum.kz', '$2a$10$rX8gDUlYN5kFd6z1WzKjuebKsNbAyDxEr7YFJR5.ABc6LdWLuJnFW', 'Коуч', 'Insights', 'coach', 'Ditum', true, true),
                                                                                                               ('support@ditum.kz', '$2a$10$rX8gDUlYN5kFd6z1WzKjuebKsNbAyDxEr7YFJR5.ABc6LdWLuJnFW', 'Поддержка', 'Команда', 'coach', 'Ditum', true, true)
     ON CONFLICT (email) DO NOTHING;
 
--- ===== ПРЕДСТАВЛЕНИЯ ДЛЯ ОТЧЕТНОСТИ =====
-
--- Статистика тестов
-CREATE OR REPLACE VIEW test_statistics AS
-SELECT
-    DATE(t.created_at) as test_date,
-    COUNT(*) as total_tests,
-    COUNT(tr.id) as completed_tests,
-    ROUND(COUNT(tr.id)::numeric / COUNT(*)::numeric * 100, 2) as completion_rate,
-    t.coach_email,
-    u.first_name || ' ' || u.last_name as coach_name
-FROM tests t
-    LEFT JOIN test_results tr ON t.id = tr.test_id
-    LEFT JOIN users u ON t.coach_id = u.id
-GROUP BY DATE(t.created_at), t.coach_email, u.first_name, u.last_name
-ORDER BY test_date DESC;
-
--- Активность пользователей
-CREATE OR REPLACE VIEW user_activity AS
-SELECT
-    u.id,
-    u.email,
-    u.first_name || ' ' || u.last_name as full_name,
-    u.role,
-    COUNT(t.id) as total_tests_created,
-    COUNT(tr.id) as total_completed_tests,
-    u.last_login,
-    u.created_at as registration_date
-FROM users u
-         LEFT JOIN tests t ON u.id = t.coach_id
-         LEFT JOIN test_results tr ON t.id = tr.test_id
-WHERE u.is_active = true
-GROUP BY u.id, u.email, u.first_name, u.last_name, u.role, u.last_login, u.created_at
-ORDER BY u.last_login DESC NULLS LAST;
-
--- Сводка по сессиям
-CREATE OR REPLACE VIEW session_summary AS
-SELECT
-    ts.test_id,
-    t.project_name,
-    COUNT(*) as total_sessions,
-    COUNT(CASE WHEN ts.completed = true THEN 1 END) as completed_sessions,
-    AVG(CASE WHEN ts.completed = true THEN ts.time_spent_seconds END) as avg_time_seconds,
-    MIN(ts.started_at) as first_session,
-    MAX(ts.started_at) as last_session
-FROM test_sessions ts
-         JOIN tests t ON ts.test_id = t.id
-GROUP BY ts.test_id, t.project_name;
-
--- ===== ФУНКЦИИ ДЛЯ СТАТИСТИКИ =====
-
--- Функция получения статистики платформы
-CREATE OR REPLACE FUNCTION get_platform_stats(days_back INTEGER DEFAULT 30)
-RETURNS TABLE (
-    total_users BIGINT,
-    active_users BIGINT,
-    total_tests BIGINT,
-    completed_tests BIGINT,
-    completion_rate NUMERIC,
-    avg_completion_time NUMERIC
-) AS $
-BEGIN
-RETURN QUERY
-SELECT
-    (SELECT COUNT(*) FROM users WHERE is_active = true)::BIGINT as total_users,
-    (SELECT COUNT(*) FROM users WHERE last_login > CURRENT_DATE - INTERVAL '30 days')::BIGINT as active_users,
-     (SELECT COUNT(*) FROM tests WHERE created_at > CURRENT_DATE - INTERVAL '1 day' * days_back)::BIGINT as total_tests,
-                                     (SELECT COUNT(*) FROM test_results WHERE completed_at > CURRENT_DATE - INTERVAL '1 day' * days_back)::BIGINT as completed_tests,
-    ROUND(
-                                                                            (SELECT COUNT(*) FROM test_results WHERE completed_at > CURRENT_DATE - INTERVAL '1 day' * days_back)::NUMERIC /
-    NULLIF((SELECT COUNT(*) FROM tests WHERE created_at > CURRENT_DATE - INTERVAL '1 day' * days_back)::NUMERIC, 0) * 100,
-    2
-    ) as completion_rate,
-    ROUND(
-                                                                            (SELECT AVG(time_spent_seconds) FROM test_sessions
-    WHERE completed = true AND completed_at > CURRENT_DATE - INTERVAL '1 day' * days_back) / 60.0,
-    2
-    ) as avg_completion_time;
-END;
-$ LANGUAGE plpgsql;
-
--- ===== ПРОЦЕДУРЫ ОБСЛУЖИВАНИЯ =====
-
--- Очистка старых сессий
-CREATE OR REPLACE FUNCTION cleanup_old_sessions()
-RETURNS INTEGER AS $
-DECLARE
-deleted_count INTEGER;
-BEGIN
-    -- Удаляем незавершенные сессии старше 7 дней
-DELETE FROM test_sessions
-WHERE completed = false
-  AND started_at < CURRENT_TIMESTAMP - INTERVAL '7 days';
-
-GET DIAGNOSTICS deleted_count = ROW_COUNT;
-
-RAISE NOTICE 'Cleaned up % old sessions', deleted_count;
-RETURN deleted_count;
-END;
-$ LANGUAGE plpgsql;
-
--- Архивирование старых результатов
-CREATE OR REPLACE FUNCTION archive_old_results()
-RETURNS INTEGER AS $
-DECLARE
-archived_count INTEGER;
-BEGIN
-    -- Помечаем PDF как expired для результатов старше 30 дней
-UPDATE test_results
-SET pdf_status = 'expired'
-WHERE completed_at < CURRENT_TIMESTAMP - INTERVAL '30 days'
-  AND pdf_status = 'ready';
-
-GET DIAGNOSTICS archived_count = ROW_COUNT;
-
-RAISE NOTICE 'Archived % old results', archived_count;
-RETURN archived_count;
-END;
-$ LANGUAGE plpgsql;
-
--- ===== ВСТАВКА АУДИТ ЗАПИСИ =====
-
--- Запись об инициализации базы данных
+-- Вставка аудит записи об инициализации
 INSERT INTO audit_log (action, resource_type, details) VALUES (
                                                                   'database_initialized',
                                                                   'system',
                                                                   jsonb_build_object(
                                                                           'version', '1.0.0',
+                                                                          'platform', 'Career Growth Insights',
                                                                           'domain', 'ditum.kz',
                                                                           'initialized_at', CURRENT_TIMESTAMP,
-                                                                          'timezone', 'Asia/Almaty',
-                                                                          'platform', 'Ditum Career Development Platform'
+                                                                          'timezone', 'Asia/Almaty'
                                                                   )
                                                               );
 
--- ===== УСТАНОВКА КОММЕНТАРИЕВ =====
+-- ===== ЗАВЕРШЕНИЕ ИНИЦИАЛИЗАЦИИ =====
 
-COMMENT ON TABLE users IS 'Пользователи системы (администраторы и коучи)';
+-- Установка комментариев
+COMMENT ON TABLE users IS 'Пользователи Career Growth Insights (администраторы и коучи)';
 COMMENT ON TABLE tests IS 'Созданные тесты и проекты';
 COMMENT ON TABLE test_sessions IS 'Сессии прохождения тестов участниками';
 COMMENT ON TABLE test_results IS 'Результаты завершенных тестов с отчетами';
-COMMENT ON TABLE system_settings IS 'Системные настройки платформы';
-COMMENT ON TABLE audit_log IS 'Журнал аудита действий пользователей';
-COMMENT ON TABLE statistics IS 'Статистические данные платформы';
-
-COMMENT ON COLUMN users.password_hash IS 'Хэш пароля (bcrypt)';
-COMMENT ON COLUMN users.failed_login_attempts IS 'Количество неудачных попыток входа';
-COMMENT ON COLUMN tests.golden_line IS 'Ключевая фраза или цель проекта';
-COMMENT ON COLUMN test_sessions.answers IS 'JSON с ответами участника';
-COMMENT ON COLUMN test_results.results IS 'JSON с результатами анализа';
-
--- ===== ЗАВЕРШЕНИЕ ИНИЦИАЛИЗАЦИИ =====
-
--- Создание начальной статистики
-INSERT INTO statistics (metric_name, metric_value, metric_data, period_start, period_end) VALUES
-    ('database_initialized', 1,
-     jsonb_build_object('tables_created', 7, 'indexes_created', 15, 'functions_created', 5),
-     CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Финальные сообщения
-DO $
+DO $$
 BEGIN
-    RAISE NOTICE '✅ Ditum.kz database initialization completed successfully!';
+    RAISE NOTICE '✅ Career Growth Insights database initialization completed!';
     RAISE NOTICE '';
     RAISE NOTICE '📊 Created objects:';
-    RAISE NOTICE '   - Tables: 7';
-    RAISE NOTICE '   - Indexes: 15+';
-    RAISE NOTICE '   - Functions: 5';
-    RAISE NOTICE '   - Views: 3';
-    RAISE NOTICE '   - Triggers: 3';
+    RAISE NOTICE '   - Tables: 6';
+    RAISE NOTICE '   - Indexes: 10+';
+    RAISE NOTICE '   - Functions: 2';
+    RAISE NOTICE '   - Triggers: 2';
     RAISE NOTICE '';
     RAISE NOTICE '👥 Demo accounts created:';
     RAISE NOTICE '   🔑 admin@ditum.kz (Administrator)';
@@ -444,10 +257,11 @@ BEGIN
     RAISE NOTICE '   🆘 support@ditum.kz (Support)';
     RAISE NOTICE '   📝 Password for all: Demo123!';
     RAISE NOTICE '';
-    RAISE NOTICE '🌐 Platform: Ditum Career Development Platform';
+    RAISE NOTICE '🌐 Platform: Career Growth Insights';
+    RAISE NOTICE '🏢 Company: Ditum';
     RAISE NOTICE '🕒 Timezone: Asia/Almaty';
-    RAISE NOTICE '🏢 Domain: ditum.kz';
+    RAISE NOTICE '🌍 Domain: ditum.kz';
     RAISE NOTICE '📧 Email: support@ditum.kz';
     RAISE NOTICE '';
     RAISE NOTICE '🚀 Ready for production deployment!';
-END $;
+END $$;

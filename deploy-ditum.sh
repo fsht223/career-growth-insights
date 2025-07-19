@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# ===== DITUM.KZ DEPLOYMENT SCRIPT =====
-# Автоматическое развертывание платформы Career Development
+# ===== CAREER GROWTH INSIGHTS - DITUM.KZ DEPLOYMENT =====
+# Автоматическое развертывание платформы Career Growth Insights
 
-echo "🏢 ===== DITUM.KZ DEPLOYMENT SCRIPT ====="
-echo "🚀 Развертывание Career Development Testing Platform"
+echo "🏢 ===== CAREER GROWTH INSIGHTS DEPLOYMENT ====="
+echo "🚀 Развертывание Career Growth Insights Platform на ditum.kz"
 echo "📅 $(date '+%Y-%m-%d %H:%M:%S')"
 echo "=================================================="
 
@@ -57,36 +57,29 @@ step "ЭТАП 1: Проверка системы"
 
 # Проверка Docker
 if ! command -v docker &> /dev/null; then
-    error "Docker не установлен! Установите Docker и повторите попытку."
-    echo "Команда установки: curl -fsSL https://get.docker.com -o get-docker.sh && sh get-docker.sh"
-    exit 1
+    error "Docker не установлен! Установка Docker..."
+    curl -fsSL https://get.docker.com -o get-docker.sh
+    sudo sh get-docker.sh
+    sudo systemctl start docker
+    sudo systemctl enable docker
+    sudo usermod -aG docker $USER
+    log "Docker установлен"
+else
+    log "Docker найден: $(docker --version)"
 fi
-log "Docker найден: $(docker --version)"
 
 # Проверка Docker Compose
 if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
-    error "Docker Compose не установлен!"
-    echo "Команда установки:"
-    echo 'curl -L "https://github.com/docker/compose/releases/download/v2.21.0/docker-compose-linux-x86_64" -o /usr/local/bin/docker-compose'
-    echo 'chmod +x /usr/local/bin/docker-compose'
-    exit 1
-fi
-log "Docker Compose найден"
-
-# Проверка прав root
-if [ "$EUID" -ne 0 ]; then
-    warn "Скрипт запущен не от root. Некоторые операции могут потребовать sudo."
+    warn "Установка Docker Compose..."
+    sudo curl -L "https://github.com/docker/compose/releases/download/v2.21.0/docker-compose-linux-x86_64" -o /usr/local/bin/docker-compose
+    sudo chmod +x /usr/local/bin/docker-compose
+    log "Docker Compose установлен"
+else
+    log "Docker Compose найден"
 fi
 
-# Проверка свободного места
-available_space=$(df / | awk 'NR==2 {print $4}')
-if [ "$available_space" -lt 2000000 ]; then
-    warn "Мало свободного места на диске (< 2GB). Рекомендуется освободить место."
-fi
-log "Свободного места: $(($available_space / 1024 / 1024))GB"
-
-# Проверка структуры проекта
-step "ЭТАП 2: Проверка файлов проекта"
+# Проверка структуры проекта Career Growth Insights
+step "ЭТАП 2: Проверка проекта Career Growth Insights"
 
 required_files=(
     "docker-compose.yml"
@@ -97,7 +90,6 @@ required_files=(
     "backend/.env"
     "frontend/Dockerfile"
     "frontend/package.json"
-    "frontend/nginx.conf"
 )
 
 missing_files=()
@@ -108,94 +100,75 @@ for file in "${required_files[@]}"; do
 done
 
 if [ ${#missing_files[@]} -ne 0 ]; then
-    error "Отсутствуют обязательные файлы:"
+    error "Отсутствуют обязательные файлы Career Growth Insights:"
     for file in "${missing_files[@]}"; do
         echo "  ❌ $file"
     done
     exit 1
 fi
-log "Все необходимые файлы найдены"
+log "Все файлы Career Growth Insights найдены"
+
+# Создание необходимых директорий
+step "ЭТАП 3: Подготовка окружения"
+
+log "Создание директорий для Career Growth Insights..."
+mkdir -p logs ssl backup temp
+chmod 755 logs ssl backup temp
 
 # Проверка конфигурации
-step "ЭТАП 3: Проверка конфигурации"
-
-# Проверка backend/.env
 if [ -f "backend/.env" ]; then
-    if grep -q "ditum.kz" backend/.env; then
-        log "Конфигурация .env настроена для ditum.kz"
+    if grep -q "Career Growth Insights\|ditum.kz" backend/.env; then
+        log "Конфигурация настроена для Career Growth Insights"
     else
-        warn "Файл .env может быть не настроен для ditum.kz"
-    fi
-
-    if grep -q "CHANGE_ME" backend/.env; then
-        warn "Обнаружены значения по умолчанию в .env файле. Рекомендуется их изменить."
+        warn "Конфигурация может быть не настроена для ditum.kz"
     fi
 else
     error "Файл backend/.env не найден!"
     exit 1
 fi
 
-# Создание дополнительных директорий
-step "ЭТАП 4: Подготовка окружения"
-
-log "Создание необходимых директорий..."
-mkdir -p logs ssl backup temp
-chmod 755 logs ssl backup temp
-
-# Создание .env файла для docker-compose если не существует
-if [ ! -f ".env" ]; then
-    log "Создание .env файла для docker-compose..."
-    cat > .env << 'EOF'
-# Docker Compose Environment
-POSTGRES_DB=motivation_testing
-POSTGRES_USER=motivation_user
-POSTGRES_PASSWORD=DitumSecure2024!
-DOMAIN_NAME=ditum.kz
-EOF
-fi
-
 # Остановка существующих контейнеров
-step "ЭТАП 5: Остановка существующих сервисов"
+step "ЭТАП 4: Остановка существующих сервисов"
 
-log "Остановка существующих контейнеров..."
-docker-compose down --remove-orphans 2>/dev/null || true
+log "Остановка существующих контейнеров Career Growth Insights..."
+sudo docker-compose down --remove-orphans 2>/dev/null || true
 check_status "Остановка контейнеров"
 
 # Очистка (опционально)
 echo ""
-read -p "🗑️  Очистить старые образы и volumes для чистой установки? (y/N): " -n 1 -r
+read -p "🗑️  Очистить старые образы для чистой установки Career Growth Insights? (y/N): " -n 1 -r
 echo ""
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-    warn "Выполняется полная очистка..."
-    docker-compose down --rmi all --volumes 2>/dev/null || true
-    docker system prune -f
+    warn "Выполняется очистка старых образов..."
+    sudo docker-compose down --rmi all --volumes 2>/dev/null || true
+    sudo docker system prune -f
     log "Очистка завершена"
 fi
 
 # Сборка образов
-step "ЭТАП 6: Сборка Docker образов"
+step "ЭТАП 5: Сборка Docker образов Career Growth Insights"
 
-log "Сборка образов для ditum.kz..."
+log "Сборка образов для Career Growth Insights на ditum.kz..."
 echo "Это может занять несколько минут..."
 
 # Сборка с выводом процесса
-docker-compose build --no-cache --parallel
-check_status "Сборка образов"
+sudo docker-compose build --no-cache --parallel
+check_status "Сборка образов Career Growth Insights"
 
-success "Образы успешно собраны!"
+success "Образы Career Growth Insights успешно собраны!"
 
 # Запуск контейнеров
-step "ЭТАП 7: Запуск сервисов"
+step "ЭТАП 6: Запуск сервисов Career Growth Insights"
 
 log "Запуск контейнеров..."
-docker-compose up -d
+sudo docker-compose up -d
 check_status "Запуск контейнеров"
 
 # Ожидание готовности сервисов
-step "ЭТАП 8: Проверка готовности сервисов"
+step "ЭТАП 7: Проверка готовности Career Growth Insights"
 
 log "Ожидание готовности сервисов..."
-sleep 20
+sleep 30
 
 # Функция проверки здоровья сервиса
 check_service_health() {
@@ -221,11 +194,11 @@ check_service_health() {
     return 1
 }
 
-# Проверка сервисов
-log "Проверка здоровья всех сервисов..."
+# Проверка сервисов Career Growth Insights
+log "Проверка здоровья всех сервисов Career Growth Insights..."
 
 # PostgreSQL
-if docker-compose exec -T postgres pg_isready -U motivation_user -d motivation_testing > /dev/null 2>&1; then
+if sudo docker-compose exec -T postgres pg_isready -U career_user -d career_growth_insights > /dev/null 2>&1; then
     log "PostgreSQL готов ✅"
 else
     warn "PostgreSQL недоступен"
@@ -238,19 +211,13 @@ check_service_health "Backend API" "http://localhost:5000/health"
 check_service_health "Frontend" "http://localhost:3000"
 
 # Проверка статуса контейнеров
-step "ЭТАП 9: Статус контейнеров"
+step "ЭТАП 8: Статус контейнеров"
 
-log "Текущий статус контейнеров:"
-docker-compose ps
-
-# Проверка логов на ошибки
-log "Проверка логов на критические ошибки..."
-if docker-compose logs backend 2>/dev/null | grep -i "error\|failed\|exception" | head -3; then
-    warn "Обнаружены ошибки в логах backend (это может быть нормально при инициализации)"
-fi
+log "Текущий статус контейнеров Career Growth Insights:"
+sudo docker-compose ps
 
 # Тестирование функциональности
-step "ЭТАП 10: Тестирование функциональности"
+step "ЭТАП 9: Тестирование Career Growth Insights"
 
 # Тест API
 log "Тестирование API..."
@@ -262,63 +229,57 @@ else
 fi
 
 # Тест базы данных
-log "Тестирование базы данных..."
-if docker-compose exec -T postgres psql -U motivation_user -d motivation_testing -c "SELECT COUNT(*) FROM users;" > /dev/null 2>&1; then
-    log "База данных инициализирована ✅"
+log "Тестирование базы данных Career Growth Insights..."
+if sudo docker-compose exec -T postgres psql -U career_user -d career_growth_insights -c "SELECT COUNT(*) FROM users;" > /dev/null 2>&1; then
+    log "База данных Career Growth Insights инициализирована ✅"
 else
     warn "Проблемы с базой данных"
 fi
 
-# Тест email сервиса
-log "Тестирование email сервиса..."
-docker-compose exec -T backend node -e "
-const emailService = require('./services/emailService');
-emailService.testConnection().then(() => {
-    console.log('✅ Email сервис ditum.kz работает');
-    process.exit(0);
-}).catch((err) => {
-    console.log('⚠️ Email сервис недоступен:', err.message);
-    process.exit(1);
-});
-" 2>/dev/null && log "Email сервис готов ✅" || warn "Email сервис недоступен"
+# Получение IP адреса сервера
+SERVER_IP=$(hostname -I | awk '{print $1}')
 
 # Финальная информация
-step "РАЗВЕРТЫВАНИЕ ЗАВЕРШЕНО!"
+step "CAREER GROWTH INSIGHTS РАЗВЕРНУТ!"
 
 echo ""
-echo "🎉 ===== DITUM.KZ УСПЕШНО РАЗВЕРНУТ! ====="
+echo "🎉 ===== CAREER GROWTH INSIGHTS УСПЕШНО РАЗВЕРНУТ! ====="
 echo ""
 echo -e "${BLUE}📊 Информация о развертывании:${NC}"
-echo "  🌐 Frontend:     http://$(hostname -I | awk '{print $1}'):3000"
-echo "  🔧 Backend API:  http://$(hostname -I | awk '{print $1}'):5000"
-echo "  💾 PostgreSQL:   $(hostname -I | awk '{print $1}'):5432"
+echo "  🌐 Frontend:     http://${SERVER_IP}:3000"
+echo "  🔧 Backend API:  http://${SERVER_IP}:5000"
+echo "  💾 PostgreSQL:   ${SERVER_IP}:5432"
 echo "  📧 Email:        ditum.kz SMTP"
 echo ""
-echo -e "${PURPLE}👥 Демо аккаунты (пароль: Demo123!):${NC}"
+echo -e "${PURPLE}👥 Демо аккаунты Career Growth Insights (пароль: Demo123!):${NC}"
 echo "  🔑 admin@ditum.kz   - Администратор"
 echo "  👨‍💼 coach@ditum.kz    - Коуч"
 echo "  🆘 support@ditum.kz - Поддержка"
 echo ""
 echo -e "${CYAN}📋 Полезные команды:${NC}"
-echo "  📊 Статус:          docker-compose ps"
-echo "  📜 Логи:            docker-compose logs -f [service]"
-echo "  🔄 Перезапуск:      docker-compose restart [service]"
-echo "  ⏹️  Остановка:       docker-compose down"
-echo "  🗄️ БД консоль:      docker-compose exec postgres psql -U motivation_user -d motivation_testing"
-echo "  📈 Мониторинг:      docker stats"
+echo "  📊 Статус:          sudo docker-compose ps"
+echo "  📜 Логи:            sudo docker-compose logs -f [service]"
+echo "  🔄 Перезапуск:      sudo docker-compose restart [service]"
+echo "  ⏹️  Остановка:       sudo docker-compose down"
+echo "  🗄️ БД консоль:      sudo docker-compose exec postgres psql -U career_user -d career_growth_insights"
+echo "  📈 Мониторинг:      sudo docker stats"
 echo ""
 echo -e "${YELLOW}⚠️  Настройки для продакшена:${NC}"
 echo "  1. 🔐 Измените JWT_SECRET в backend/.env"
 echo "  2. 🔑 Обновите пароли базы данных"
-echo "  3. 🌐 Настройте DNS: ditum.kz → $(hostname -I | awk '{print $1}')"
+echo "  3. 🌐 Настройте DNS: ditum.kz → ${SERVER_IP}"
 echo "  4. 🛡️ Настройте SSL сертификаты (certbot)"
 echo "  5. 📧 Проверьте настройки SMTP ditum.kz"
-echo "  6. 📋 Настройте резервное копирование"
-echo "  7. 🔥 Настройте firewall (ufw/iptables)"
+echo "  6. 🔥 Откройте порты в firewall:"
+echo "     sudo ufw allow 3000/tcp"
+echo "     sudo ufw allow 5000/tcp"
+echo "     sudo ufw allow 80/tcp"
+echo "     sudo ufw allow 443/tcp"
 echo ""
-echo -e "${GREEN}✅ Платформа готова к работе на ditum.kz!${NC}"
+echo -e "${GREEN}✅ Career Growth Insights готов к работе на ditum.kz!${NC}"
 echo ""
-echo "🔗 Для доступа откройте: http://$(hostname -I | awk '{print $1}'):3000"
+echo "🔗 Для доступа откройте: http://${SERVER_IP}:3000"
 echo "📧 Поддержка: support@ditum.kz"
+echo "🏢 Платформа: Career Growth Insights"
 echo ""
 echo "===== ЗАВЕРШЕНО $(date '+%Y-%m-%d %H:%M:%S') ====="

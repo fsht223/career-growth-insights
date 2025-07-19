@@ -4,11 +4,11 @@ services:
   # PostgreSQL Database
   postgres:
     image: postgres:15-alpine
-    container_name: motivation_postgres
+    container_name: career_growth_postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: motivation_testing
-      POSTGRES_USER: motivation_user
+      POSTGRES_DB: career_growth_insights
+      POSTGRES_USER: career_user
       POSTGRES_PASSWORD: DitumSecure2024!
       POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --locale=C"
     volumes:
@@ -17,9 +17,9 @@ services:
     ports:
       - "5432:5432"
     networks:
-      - motivation_network
+      - career_growth_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U motivation_user -d motivation_testing"]
+      test: ["CMD-SHELL", "pg_isready -U career_user -d career_growth_insights"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -29,13 +29,13 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: motivation_backend
+    container_name: career_growth_backend
     restart: unless-stopped
     env_file:
       - ./backend/.env
     environment:
       # Docker-specific overrides
-      - DATABASE_URL=postgresql://motivation_user:DitumSecure2024!@postgres:5432/motivation_testing
+      - DATABASE_URL=postgresql://career_user:DitumSecure2024!@postgres:5432/career_growth_insights
       - DB_HOST=postgres
       - DB_PORT=5432
       - FRONTEND_URL=https://ditum.kz
@@ -45,7 +45,7 @@ services:
     ports:
       - "5000:5000"
     networks:
-      - motivation_network
+      - career_growth_network
     depends_on:
       postgres:
         condition: service_healthy
@@ -63,15 +63,15 @@ services:
       dockerfile: Dockerfile
       args:
         - VITE_API_URL=https://ditum.kz/api
-        - VITE_APP_NAME=Ditum Career Testing
+        - VITE_APP_NAME=Career Growth Insights
         - VITE_APP_DOMAIN=ditum.kz
-    container_name: motivation_frontend
+    container_name: career_growth_frontend
     restart: unless-stopped
     ports:
       - "3000:80"
       - "80:80"
     networks:
-      - motivation_network
+      - career_growth_network
     depends_on:
       backend:
         condition: service_healthy
@@ -90,8 +90,8 @@ volumes:
     driver: local
 
 networks:
-  motivation_network:
+  career_growth_network:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.20.0.0/16
+        - subnet: 172.21.0.0/16
