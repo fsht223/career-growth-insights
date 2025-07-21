@@ -1,7 +1,5 @@
-version: '3.8'
-
 services:
-  # PostgreSQL Database - НОВАЯ СХЕМА
+  # PostgreSQL Database
   postgres:
     image: postgres:15-alpine
     container_name: career_growth_postgres
@@ -14,7 +12,6 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
-      - ./backup:/backup
     ports:
       - "127.0.0.1:5432:5432"
     networks:
@@ -23,12 +20,8 @@ services:
       test: ["CMD-SHELL", "pg_isready -U career_user -d career_growth_insights"]
       interval: 10s
       timeout: 5s
-      retries: 5
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+      retries: 10
+      start_period: 30s
 
   # Backend API
   backend:
@@ -40,15 +33,18 @@ services:
     env_file:
       - ./backend/.env
     environment:
-      # Docker-specific overrides
-      - DATABASE_URL=postgresql://career_user:DitumSecure2024!@postgres:5432/career_growth_insights
+      # Docker-specific overrides БЕЗ SSL
+      - DATABASE_URL=postgresql://career_user:DitumSecure2024!@postgres:5432/career_growth_insights?sslmode=disable
       - DB_HOST=postgres
       - DB_PORT=5432
+      - DB_SSL=false
+      - PGSSL=false
+      - PGSSLMODE=disable
       - FRONTEND_URL=https://ditum.kz
+      - NODE_ENV=production
     volumes:
       - backend_uploads:/app/uploads
       - backend_logs:/app/logs
-      - ./backup:/backup
     ports:
       - "127.0.0.1:5000:5000"
     networks:
@@ -59,14 +55,9 @@ services:
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5000/health"]
       interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s  # Увеличено время для инициализации БД
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+      timeout: 15s
+      retries: 5
+      start_period: 60s
 
   # Frontend React App
   frontend:
@@ -85,17 +76,12 @@ services:
       - career_growth_network
     depends_on:
       backend:
-        condition: service_healthy
+        condition: service_started
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80"]
       interval: 30s
       timeout: 10s
       retries: 3
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
 
 volumes:
   postgres_data:
