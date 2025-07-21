@@ -1,9 +1,7 @@
 version: '3.8'
 
 services:
-  # PostgreSQL Database
-  nginx:
-
+  # PostgreSQL Database - НОВАЯ СХЕМА
   postgres:
     image: postgres:15-alpine
     container_name: career_growth_postgres
@@ -16,8 +14,9 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - ./backup:/backup
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     networks:
       - career_growth_network
     healthcheck:
@@ -25,6 +24,11 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # Backend API
   backend:
@@ -44,8 +48,9 @@ services:
     volumes:
       - backend_uploads:/app/uploads
       - backend_logs:/app/logs
+      - ./backup:/backup
     ports:
-      - "5000:5000"
+      - "127.0.0.1:5000:5000"
     networks:
       - career_growth_network
     depends_on:
@@ -56,7 +61,12 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 60s  # Увеличено время для инициализации БД
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # Frontend React App
   frontend:
@@ -70,8 +80,7 @@ services:
     container_name: career_growth_frontend
     restart: unless-stopped
     ports:
-      - "3000:80"
-      - "80:80"
+      - "127.0.0.1:3000:80"
     networks:
       - career_growth_network
     depends_on:
@@ -82,6 +91,11 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   postgres_data:

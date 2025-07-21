@@ -69,7 +69,7 @@ else
 fi
 
 # Проверка Docker Compose
-if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
+if ! command -v docker compose &> /dev/null && ! docker compose version &> /dev/null; then
     warn "Установка Docker Compose..."
     sudo curl -L "https://github.com/docker/compose/releases/download/v2.21.0/docker-compose-linux-x86_64" -o /usr/local/bin/docker-compose
     sudo chmod +x /usr/local/bin/docker-compose
@@ -131,7 +131,7 @@ fi
 step "ЭТАП 4: Остановка существующих сервисов"
 
 log "Остановка существующих контейнеров Career Growth Insights..."
-sudo docker-compose down --remove-orphans 2>/dev/null || true
+sudo docker compose down --remove-orphans 2>/dev/null || true
 check_status "Остановка контейнеров"
 
 # Очистка (опционально)
@@ -140,7 +140,7 @@ read -p "🗑️  Очистить старые образы для чистой
 echo ""
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     warn "Выполняется очистка старых образов..."
-    sudo docker-compose down --rmi all --volumes 2>/dev/null || true
+    sudo docker compose down --rmi all --volumes 2>/dev/null || true
     sudo docker system prune -f
     log "Очистка завершена"
 fi
@@ -152,7 +152,7 @@ log "Сборка образов для Career Growth Insights на ditum.kz..."
 echo "Это может занять несколько минут..."
 
 # Сборка с выводом процесса
-sudo docker-compose build --no-cache --parallel
+sudo docker compose build --no-cache --parallel
 check_status "Сборка образов Career Growth Insights"
 
 success "Образы Career Growth Insights успешно собраны!"
@@ -161,7 +161,7 @@ success "Образы Career Growth Insights успешно собраны!"
 step "ЭТАП 6: Запуск сервисов Career Growth Insights"
 
 log "Запуск контейнеров..."
-sudo docker-compose up -d
+sudo docker compose up -d
 check_status "Запуск контейнеров"
 
 # Ожидание готовности сервисов
@@ -198,7 +198,7 @@ check_service_health() {
 log "Проверка здоровья всех сервисов Career Growth Insights..."
 
 # PostgreSQL
-if sudo docker-compose exec -T postgres pg_isready -U career_user -d career_growth_insights > /dev/null 2>&1; then
+if sudo docker compose exec -T postgres pg_isready -U career_user -d career_growth_insights > /dev/null 2>&1; then
     log "PostgreSQL готов ✅"
 else
     warn "PostgreSQL недоступен"
@@ -214,7 +214,7 @@ check_service_health "Frontend" "http://localhost:3000"
 step "ЭТАП 8: Статус контейнеров"
 
 log "Текущий статус контейнеров Career Growth Insights:"
-sudo docker-compose ps
+sudo docker compose ps
 
 # Тестирование функциональности
 step "ЭТАП 9: Тестирование Career Growth Insights"
@@ -230,7 +230,7 @@ fi
 
 # Тест базы данных
 log "Тестирование базы данных Career Growth Insights..."
-if sudo docker-compose exec -T postgres psql -U career_user -d career_growth_insights -c "SELECT COUNT(*) FROM users;" > /dev/null 2>&1; then
+if sudo docker compose exec -T postgres psql -U career_user -d career_growth_insights -c "SELECT COUNT(*) FROM users;" > /dev/null 2>&1; then
     log "База данных Career Growth Insights инициализирована ✅"
 else
     warn "Проблемы с базой данных"
