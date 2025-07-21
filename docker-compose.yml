@@ -2,6 +2,8 @@ version: '3.8'
 
 services:
   # PostgreSQL Database
+  nginx:
+
   postgres:
     image: postgres:15-alpine
     container_name: career_growth_postgres
