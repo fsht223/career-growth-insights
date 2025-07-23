@@ -46,7 +46,7 @@ services:
       - backend_uploads:/app/uploads
       - backend_logs:/app/logs
     ports:
-      - "127.0.0.1:5000:5000"
+      - "127.0.0.1:5000:5000"  # Backend остается внутренним
     networks:
       - career_growth_network
     depends_on:
@@ -70,8 +70,12 @@ services:
         - VITE_APP_DOMAIN=ditum.kz
     container_name: career_growth_frontend
     restart: unless-stopped
+    volumes:
+      # SSL сертификаты (будут созданы на сервере)
+      - ./ssl:/etc/ssl/certs:ro
     ports:
-      - "127.0.0.1:3000:80"
+      - "80:80"        # HTTP на стандартном порту
+      - "443:443"      # HTTPS на стандартном порту
     networks:
       - career_growth_network
     depends_on:
