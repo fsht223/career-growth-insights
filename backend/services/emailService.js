@@ -11,11 +11,11 @@ class EmailService {
   initTransporter() {
     // Настройка для сервера ditum.kz
     const smtpConfig = {
-      host: process.env.SMTP_HOST || 'ditum.kz',
-      port: parseInt(process.env.SMTP_PORT) || 465,
-      secure: process.env.SMTP_SECURE === 'true' || true, // true для SSL/TLS
+      host: process.env.SMTP_HOST || 'smtp.gmail.com',
+      port: parseInt(process.env.SMTP_PORT) || 587,
+      secure: process.env.SMTP_SECURE === 'true' || false,
       auth: {
-        user: process.env.SMTP_USER || 'test@ditum.kz',
+        user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASSWORD
       },
       // Дополнительные настройки для совместимости
@@ -26,18 +26,139 @@ class EmailService {
       logger: process.env.NODE_ENV === 'development'
     };
 
-    // Для разработки - используем Gmail настройки как fallback
-    if (process.env.NODE_ENV === 'development' && !process.env.SMTP_USER) {
-      smtpConfig.host = 'smtp.gmail.com';
-      smtpConfig.port = 587;
-      smtpConfig.secure = false;
-      smtpConfig.auth.user = 'alisher.ibraev03@gmail.com';
-      smtpConfig.auth.pass = 'pyam ondy twqt pola';
-    }
-
     console.log(`Initializing email service with host: ${smtpConfig.host}:${smtpConfig.port}`);
 
-    this.transporter = nodemailer.createTransport(smtpConfig);
+    this.transporter = nodemailer.createTransporter(smtpConfig);
+  }
+
+  // Новый метод для отправки приглашения на тест
+  async sendTestInvitation(testData) {
+    try {
+      const { userEmail, testLink, projectName, coachName } = testData;
+
+      const emailTemplate = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Приглашение на тестирование</title>
+        </head>
+        <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f5f5f5;">
+          <div style="max-width: 600px; margin: 0 auto; background-color: white;">
+            <!-- Header -->
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center;">
+              <h1 style="color: white; margin: 0; font-size: 24px;">Приглашение на тестирование</h1>
+              <p style="color: #e8f4f8; margin: 10px 0 0 0; font-size: 14px;">Career Growth Insights</p>
+            </div>
+            
+            <!-- Main Content -->
+            <div style="padding: 30px;">
+              <h2 style="color: #333; margin: 0 0 20px 0;">Здравствуйте!</h2>
+              
+              <p style="font-size: 16px; line-height: 1.6; color: #555; margin-bottom: 20px;">
+                Вы приглашены пройти профессиональное тестирование в рамках проекта <strong>"${projectName}"</strong>.
+              </p>
+              
+              <!-- Test Info Box -->
+              <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #667eea;">
+                <h3 style="margin: 0 0 15px 0; color: #333; font-size: 18px;">📊 О тестировании:</h3>
+                <ul style="margin: 0; padding-left: 20px; color: #555; line-height: 1.8;">
+                  <li><strong>Время прохождения:</strong> 15-20 минут</li>
+                  <li><strong>Количество вопросов:</strong> 40</li>
+                  <li><strong>Результат:</strong> персональный PDF-отчет</li>
+                  <li><strong>Язык:</strong> русский</li>
+                </ul>
+              </div>
+              
+              <!-- CTA Button -->
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${testLink}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);">
+                  🚀 Пройти тестирование
+                </a>
+              </div>
+              
+              <!-- Link Fallback -->
+              <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 15px; margin: 20px 0;">
+                <p style="margin: 0; font-size: 14px; color: #856404;">
+                  <strong>Если кнопка не работает,</strong> скопируйте и вставьте эту ссылку в браузер:
+                </p>
+                <p style="margin: 10px 0 0 0; word-break: break-all;">
+                  <a href="${testLink}" style="color: #667eea; text-decoration: none;">${testLink}</a>
+                </p>
+              </div>
+              
+              <!-- Features -->
+              <div style="margin: 30px 0;">
+                <h3 style="color: #333; margin-bottom: 15px;">✨ Особенности тестирования:</h3>
+                <div style="display: table; width: 100%;">
+                  <div style="display: table-row;">
+                    <div style="display: table-cell; padding: 10px; width: 50%;">
+                      <div style="background: #e8f4f8; padding: 15px; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 24px; margin-bottom: 5px;">💾</div>
+                        <strong style="color: #333;">Автосохранение</strong>
+                        <p style="margin: 5px 0 0 0; font-size: 12px; color: #666;">Прогресс сохраняется автоматически</p>
+                      </div>
+                    </div>
+                    <div style="display: table-cell; padding: 10px; width: 50%;">
+                      <div style="background: #fff0e6; padding: 15px; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 24px; margin-bottom: 5px;">📋</div>
+                        <strong style="color: #333;">PDF отчет</strong>
+                        <p style="margin: 5px 0 0 0; font-size: 12px; color: #666;">Детальные результаты</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Important Notice -->
+              <div style="background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 8px; padding: 15px; margin: 20px 0;">
+                <p style="margin: 0; font-size: 14px; color: #0c5460;">
+                  <strong>💡 Важно:</strong> Ваш прогресс автоматически сохраняется каждые 30 секунд. 
+                  Если вы прервете тестирование, вы сможете продолжить позже, перейдя по той же ссылке.
+                </p>
+              </div>
+              
+              ${coachName ? `
+              <p style="font-size: 14px; color: #777; margin-top: 30px;">
+                Приглашение отправлено: <strong>${coachName}</strong>
+              </p>
+              ` : ''}
+            </div>
+            
+            <!-- Footer -->
+            <div style="background: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #dee2e6;">
+              <p style="margin: 0; color: #777; font-size: 12px;">© 2024 ${process.env.COMPANY_NAME || 'Ditum'}</p>
+              <p style="margin: 5px 0 0 0; color: #777; font-size: 12px;">
+                Поддержка: <a href="mailto:${process.env.SUPPORT_EMAIL}" style="color: #667eea; text-decoration: none;">${process.env.SUPPORT_EMAIL}</a>
+              </p>
+              <p style="margin: 5px 0 0 0; color: #777; font-size: 12px;">
+                Платформа: <a href="https://ditum.kz" style="color: #667eea; text-decoration: none;">ditum.kz</a>
+              </p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+
+      const mailOptions = {
+        from: {
+          name: process.env.FROM_NAME || 'Ditum Career Testing',
+          address: process.env.FROM_EMAIL || process.env.SMTP_USER
+        },
+        to: userEmail,
+        subject: `Приглашение на тестирование - ${projectName}`,
+        html: emailTemplate
+      };
+
+      const result = await this.transporter.sendMail(mailOptions);
+      console.log('✅ Test invitation sent successfully to:', userEmail, 'MessageId:', result.messageId);
+      return result;
+
+    } catch (error) {
+      console.error('❌ Failed to send test invitation to:', testData.userEmail, error);
+      throw error;
+    }
   }
 
   async sendTestReport(reportData, pdfBuffer) {
@@ -56,509 +177,100 @@ class EmailService {
           day: 'numeric'
         }),
         reportId,
-        supportEmail: process.env.FROM_EMAIL || 'test@ditum.kz',
-        platformName: process.env.FROM_NAME || 'Career Growth Insights'
+        supportEmail: process.env.SUPPORT_EMAIL || process.env.SMTP_USER,
+        platformName: process.env.PLATFORM_NAME || 'Ditum Career Testing'
       });
 
       const mailOptions = {
         from: {
-          name: process.env.FROM_NAME || 'Career Growth Insights',
-          address: process.env.FROM_EMAIL || process.env.SMTP_USER || 'test@ditum.kz'
+          name: process.env.FROM_NAME || 'Ditum Career Testing',
+          address: process.env.FROM_EMAIL || process.env.SMTP_USER
         },
         to: userInfo.email,
         subject: `Результаты тестирования - ${testInfo.projectName}`,
         html: htmlContent,
-        attachments: [
-          {
-            filename: `Отчет_${userInfo.lastName}_${userInfo.firstName}_${new Date().toISOString().split('T')[0]}.pdf`,
-            content: pdfBuffer,
-            contentType: 'application/pdf'
-          }
-        ]
+        attachments: pdfBuffer ? [{
+          filename: `Отчет_${userInfo.firstName}_${userInfo.lastName}_${reportId}.pdf`,
+          content: pdfBuffer,
+          contentType: 'application/pdf'
+        }] : []
       };
 
-      console.log(`Sending report email to: ${userInfo.email}`);
       const result = await this.transporter.sendMail(mailOptions);
-      console.log('Report email sent successfully:', result.messageId);
+      console.log('✅ Test report sent successfully:', result.messageId);
       return result;
 
     } catch (error) {
-      console.error('Failed to send report email:', error);
-      throw new Error(`Failed to send email with report: ${error.message}`);
+      console.error('❌ Failed to send test report:', error);
+      throw error;
     }
   }
 
-  async sendTestInvitation(testData, recipientEmail) {
+  // Метод для отправки уведомления коучу о завершении теста
+  async sendCoachNotification(notificationData) {
     try {
-      const emailTemplate = this.getInvitationEmailTemplate();
-      const compiledTemplate = handlebars.compile(emailTemplate);
+      const { coachEmail, userName, projectName, reportUrl, dashboardUrl } = notificationData;
 
-      const htmlContent = compiledTemplate({
-        projectName: testData.projectName,
-        testLink: testData.link,
-        coachName: testData.coachName || 'Ваш коуч',
-        description: testData.description || 'Пройдите профессиональное тестирование для оценки компетенций и мотивационных факторов.',
-        estimatedTime: '15-20 минут',
-        supportEmail: process.env.FROM_EMAIL || 'test@ditum.kz',
-        platformName: process.env.FROM_NAME || 'Career Growth Insights'
-      });
-
-      const mailOptions = {
-        from: {
-          name: process.env.FROM_NAME || 'Career Growth Insights',
-          address: process.env.FROM_EMAIL || process.env.SMTP_USER || 'test@ditum.kz'
-        },
-        to: recipientEmail,
-        subject: `Приглашение на тестирование - ${testData.projectName}`,
-        html: htmlContent
-      };
-
-      console.log(`Sending invitation email to: ${recipientEmail}`);
-      const result = await this.transporter.sendMail(mailOptions);
-      console.log('Invitation email sent successfully:', result.messageId);
-      return result;
-
-    } catch (error) {
-      console.error('Failed to send invitation email:', error);
-      throw new Error(`Failed to send invitation email: ${error.message}`);
-    }
-  }
-
-  async sendCoachNotification(testData, reportData) {
-    try {
       const emailTemplate = this.getCoachNotificationTemplate();
       const compiledTemplate = handlebars.compile(emailTemplate);
 
       const htmlContent = compiledTemplate({
-        projectName: testData.projectName,
-        testeeName: `${reportData.userInfo.firstName} ${reportData.userInfo.lastName}`,
-        testeeEmail: reportData.userInfo.email,
-        completedAt: new Date().toLocaleDateString('ru-RU', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
-        }),
-        reportUrl: reportData.reportUrl,
-        dashboardUrl: `${process.env.FRONTEND_URL || 'https://test.ditum.kz'}/dashboard`,
-        supportEmail: process.env.FROM_EMAIL || 'test@ditum.kz',
-        platformName: process.env.FROM_NAME || 'Career Growth Insights'
+        userName,
+        projectName,
+        reportUrl,
+        dashboardUrl,
+        platformName: process.env.PLATFORM_NAME || 'Ditum Career Testing',
+        supportEmail: process.env.SUPPORT_EMAIL || process.env.SMTP_USER
       });
 
       const mailOptions = {
         from: {
-          name: process.env.FROM_NAME || 'Career Growth Insights',
-          address: process.env.FROM_EMAIL || process.env.SMTP_USER || 'test@ditum.kz'
+          name: process.env.FROM_NAME || 'Ditum Career Testing',
+          address: process.env.FROM_EMAIL || process.env.SMTP_USER
         },
-        to: testData.coachEmail,
-        subject: `Тест завершен - ${testData.projectName}`,
+        to: coachEmail,
+        subject: `Тест завершен - ${userName} (${projectName})`,
         html: htmlContent
       };
 
-      console.log(`Sending coach notification to: ${testData.coachEmail}`);
       const result = await this.transporter.sendMail(mailOptions);
-      console.log('Coach notification sent successfully:', result.messageId);
+      console.log('✅ Coach notification sent successfully:', result.messageId);
       return result;
 
     } catch (error) {
-      console.error('Failed to send coach notification:', error);
-      throw new Error(`Failed to send coach notification: ${error.message}`);
+      console.error('❌ Failed to send coach notification:', error);
+      throw error;
     }
-  }
-
-  getReportEmailTemplate() {
-    return `
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Результаты тестирования</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f4f4f4;
-        }
-        .container {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
-        }
-        .header {
-            text-align: center;
-            border-bottom: 3px solid #1e40af;
-            padding-bottom: 20px;
-            margin-bottom: 30px;
-        }
-        .header h1 {
-            color: #1e40af;
-            margin: 0;
-            font-size: 28px;
-        }
-        .content {
-            margin-bottom: 30px;
-        }
-        .info-box {
-            background: #f0f9ff;
-            padding: 20px;
-            border-radius: 8px;
-            margin: 20px 0;
-            border-left: 4px solid #1e40af;
-        }
-        .button {
-            display: inline-block;
-            background: #1e40af;
-            color: white;
-            padding: 15px 30px;
-            text-decoration: none;
-            border-radius: 6px;
-            margin: 20px 0;
-            font-weight: bold;
-            text-align: center;
-        }
-        .features {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-            margin: 20px 0;
-        }
-        .feature {
-            background: #f0f9ff;
-            padding: 15px;
-            border-radius: 6px;
-            text-align: center;
-            border: 1px solid #0ea5e9;
-        }
-        .footer {
-            text-align: center;
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #e5e7eb;
-            color: #6b7280;
-            font-size: 14px;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>📊 Ваши результаты готовы!</h1>
-            <p>{{platformName}} - Персональная оценка компетенций</p>
-        </div>
-        
-        <div class="content">
-            <h2>Здравствуйте, {{userName}}!</h2>
-            
-            <p>Спасибо за прохождение тестирования в рамках проекта <strong>{{projectName}}</strong>.</p>
-            
-            <div class="info-box">
-                <h3>📋 Информация о тестировании</h3>
-                <p><strong>Проект:</strong> {{projectName}}</p>
-                <p><strong>Дата прохождения:</strong> {{testDate}}</p>
-                <p><strong>ID отчета:</strong> {{reportId}}</p>
-            </div>
-            
-            <div class="features">
-                <div class="feature">
-                    <h4>📈 Профиль компетенций</h4>
-                    <p>Детальный анализ</p>
-                </div>
-                <div class="feature">
-                    <h4>🎯 Мотивационные факторы</h4>
-                    <p>Личные драйверы</p>
-                </div>
-                <div class="feature">
-                    <h4>💡 Рекомендации</h4>
-                    <p>План развития</p>
-                </div>
-                <div class="feature">
-                    <h4>📊 Benchmarking</h4>
-                    <p>Сравнение с эталоном</p>
-                </div>
-            </div>
-            
-            <h3>📄 Персональный отчет</h3>
-            <p>Ваш детальный отчет с результатами тестирования прикреплен к этому письму. Отчет содержит:</p>
-            <ul>
-                <li>Профиль профессиональных компетенций</li>
-                <li>Анализ мотивационных факторов</li>
-                <li>Сильные стороны и области развития</li>
-                <li>Персональные рекомендации</li>
-                <li>План профессионального развития</li>
-            </ul>
-            
-            <div class="info-box">
-                <h3>🔒 Конфиденциальность</h3>
-                <p>Ваши данные защищены и используются исключительно для составления персонального отчета. 
-                Отчет предназначен исключительно для вашего личного использования и профессионального развития.</p>
-            </div>
-        </div>
-        
-        <div class="footer">
-            <p>Если у вас есть вопросы по результатам тестирования, обратитесь к коучу, который предоставил вам доступ к тесту.</p>
-            <p>📧 Поддержка: {{supportEmail}}</p>
-            <p>© 2024 {{platformName}} | test.ditum.kz</p>
-        </div>
-    </div>
-</body>
-</html>
-    `;
-  }
-
-  getInvitationEmailTemplate() {
-    return `
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Приглашение на тестирование</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f4f4f4;
-        }
-        .container {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
-        }
-        .header {
-            text-align: center;
-            border-bottom: 3px solid #1e40af;
-            padding-bottom: 20px;
-            margin-bottom: 30px;
-        }
-        .header h1 {
-            color: #1e40af;
-            margin: 0;
-        }
-        .content {
-            margin-bottom: 30px;
-        }
-        .info-box {
-            background: #f8fafc;
-            padding: 20px;
-            border-radius: 8px;
-            margin: 20px 0;
-            border-left: 4px solid #1e40af;
-        }
-        .button {
-            display: inline-block;
-            background: #1e40af;
-            color: white;
-            padding: 15px 30px;
-            text-decoration: none;
-            border-radius: 6px;
-            margin: 20px 0;
-            font-weight: bold;
-            text-align: center;
-        }
-        .features {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-            margin: 20px 0;
-        }
-        .feature {
-            background: #f0f9ff;
-            padding: 15px;
-            border-radius: 6px;
-            text-align: center;
-            border: 1px solid #0ea5e9;
-        }
-        .footer {
-            text-align: center;
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #e5e7eb;
-            color: #6b7280;
-            font-size: 14px;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>🎯 Приглашение на тестирование</h1>
-            <p>{{platformName}} - Персональная оценка компетенций</p>
-        </div>
-        
-        <div class="content">
-            <h2>Здравствуйте!</h2>
-            
-            <p>Вы приглашены пройти профессиональное тестирование в рамках проекта <strong>{{projectName}}</strong>.</p>
-            
-            <p>{{description}}</p>
-            
-            <div class="info-box">
-                <h3>📋 Детали тестирования</h3>
-                <p><strong>Проект:</strong> {{projectName}}</p>
-                <p><strong>Время прохождения:</strong> {{estimatedTime}}</p>
-                <p><strong>Количество вопросов:</strong> 40</p>
-                <p><strong>Коуч:</strong> {{coachName}}</p>
-            </div>
-            
-            <div class="features">
-                <div class="feature">
-                    <h4>⏱️ {{estimatedTime}}</h4>
-                    <p>Время прохождения</p>
-                </div>
-                <div class="feature">
-                    <h4>❓ 40 вопросов</h4>
-                    <p>Структурированный тест</p>
-                </div>
-                <div class="feature">
-                    <h4>📊 Глубокий анализ</h4>
-                    <p>Детальные результаты</p>
-                </div>
-                <div class="feature">
-                    <h4>🔒 Защита данных</h4>
-                    <p>Конфиденциальность</p>
-                </div>
-                <div class="feature">
-                    <h4>📄 PDF отчет</h4>
-                    <p>Персональные рекомендации</p>
-                </div>
-                <div class="feature">
-                    <h4>💾 Сохранение прогресса</h4>
-                    <p>Автоматически</p>
-                </div>
-            </div>
-            
-            <div style="text-align: center;">
-                <a href="{{testLink}}" class="button">🚀 Начать тестирование</a>
-            </div>
-            
-            <div class="info-box">
-                <h3>💡 Важная информация</h3>
-                <p>• Ваш прогресс автоматически сохраняется каждые 30 секунд</p>
-                <p>• Вы можете прервать тест и продолжить позже по той же ссылке</p>
-                <p>• После завершения вы получите детальный отчет на email</p>
-                <p>• Все данные защищены и конфиденциальны</p>
-            </div>
-        </div>
-        
-        <div class="footer">
-            <p>Если у вас есть вопросы, обратитесь к вашему коучу: {{coachName}}</p>
-            <p>📧 Поддержка: {{supportEmail}}</p>
-            <p>© 2024 {{platformName}} | test.ditum.kz</p>
-        </div>
-    </div>
-</body>
-</html>
-    `;
   }
 
   getCoachNotificationTemplate() {
     return `
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="utf-8">
     <title>Тест завершен</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f4f4f4;
-        }
-        .container {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
-        }
-        .header {
-            text-align: center;
-            border-bottom: 3px solid #10b981;
-            padding-bottom: 20px;
-            margin-bottom: 30px;
-        }
-        .header h1 {
-            color: #10b981;
-            margin: 0;
-        }
-        .content {
-            margin-bottom: 30px;
-        }
-        .info-box {
-            background: #f0fdf4;
-            padding: 20px;
-            border-radius: 8px;
-            margin: 20px 0;
-            border-left: 4px solid #10b981;
-        }
-        .button {
-            display: inline-block;
-            background: #1e40af;
-            color: white;
-            padding: 15px 30px;
-            text-decoration: none;
-            border-radius: 6px;
-            margin: 10px 5px;
-            font-weight: bold;
-            text-align: center;
-        }
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-            margin: 20px 0;
-        }
-        .stat {
-            background: #f8fafc;
-            padding: 15px;
-            border-radius: 6px;
-            text-align: center;
-            border: 1px solid #e2e8f0;
-        }
-        .footer {
-            text-align: center;
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #e5e7eb;
-            color: #6b7280;
-            font-size: 14px;
-        }
+        .container { max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; }
+        .content { padding: 30px; background: white; }
+        .button { display: inline-block; background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin: 5px; }
+        .stats { display: flex; justify-content: space-around; margin: 20px 0; }
+        .stat { text-align: center; padding: 15px; background: #f8f9fa; border-radius: 8px; margin: 0 5px; }
+        .footer { background: #f8f9fa; padding: 20px; text-align: center; color: #777; font-size: 12px; }
+        .info-box { background: #d1ecf1; border-left: 4px solid #bee5eb; padding: 15px; margin: 20px 0; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>✅ Тест завершен</h1>
-            <p>Участник завершил тестирование</p>
+            <h1>✅ Тест завершен!</h1>
+            <p>Участник: {{userName}}</p>
         </div>
         
         <div class="content">
-            <h2>Уведомление о завершении теста</h2>
-            
-            <p>Участник успешно завершил тестирование в рамках проекта <strong>{{projectName}}</strong>.</p>
-            
-            <div class="info-box">
-                <h3>👤 Информация об участнике</h3>
-                <p><strong>Имя:</strong> {{testeeName}}</p>
-                <p><strong>Email:</strong> {{testeeEmail}}</p>
-                <p><strong>Дата завершения:</strong> {{completedAt}}</p>
-            </div>
+            <h2>🎉 Отличные новости!</h2>
+            <p>Участник <strong>{{userName}}</strong> успешно завершил тестирование в рамках проекта "<strong>{{projectName}}</strong>".</p>
             
             <div class="stats">
                 <div class="stat">
@@ -597,12 +309,86 @@ class EmailService {
         <div class="footer">
             <p>Это автоматическое уведомление от {{platformName}}.</p>
             <p>📧 Поддержка: {{supportEmail}}</p>
-            <p>© 2024 {{platformName}} | test.ditum.kz</p>
+            <p>© 2024 {{platformName}} | ditum.kz</p>
         </div>
     </div>
 </body>
 </html>
     `;
+  }
+
+  getReportEmailTemplate() {
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Результаты тестирования</title>
+    <style>
+        .container { max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; }
+        .content { padding: 30px; background: white; }
+        .button { display: inline-block; background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; }
+        .footer { background: #f8f9fa; padding: 20px; text-align: center; color: #777; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎉 Результаты готовы!</h1>
+            <p>{{userName}}</p>
+        </div>
+        
+        <div class="content">
+            <h2>Спасибо за прохождение тестирования!</h2>
+            <p>Ваши результаты по проекту "<strong>{{projectName}}</strong>" готовы для просмотра.</p>
+            
+            <p><strong>Дата прохождения:</strong> {{testDate}}</p>
+            <p><strong>ID отчета:</strong> {{reportId}}</p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="#" class="button">📋 Просмотреть отчет</a>
+            </div>
+            
+            <p>Ваш персональный отчет содержит детальный анализ компетенций и рекомендации по развитию.</p>
+        </div>
+        
+        <div class="footer">
+            <p>С уважением, команда {{platformName}}</p>
+            <p>📧 Поддержка: {{supportEmail}}</p>
+        </div>
+    </div>
+</body>
+</html>
+    `;
+  }
+
+  // Метод для отправки тестового письма
+  async sendTestEmail(recipientEmail = 'test@example.com') {
+    try {
+      const mailOptions = {
+        from: {
+          name: process.env.FROM_NAME || 'Ditum Career Testing',
+          address: process.env.FROM_EMAIL || process.env.SMTP_USER
+        },
+        to: recipientEmail,
+        subject: 'Тест отправки email - Ditum Career Testing',
+        html: `
+          <h1>✅ Email сервис работает!</h1>
+          <p>Это тестовое письмо от платформы Ditum Career Testing.</p>
+          <p>Время отправки: ${new Date().toLocaleString('ru-RU')}</p>
+          <p>Сервер: ${process.env.SMTP_HOST || 'не указан'}</p>
+        `
+      };
+
+      const result = await this.transporter.sendMail(mailOptions);
+      console.log('✅ Test email sent successfully:', result.messageId);
+      return result;
+
+    } catch (error) {
+      console.error('❌ Failed to send test email:', error);
+      throw error;
+    }
   }
 
   async testConnection() {
@@ -617,37 +403,9 @@ class EmailService {
         host: process.env.SMTP_HOST,
         port: process.env.SMTP_PORT,
         secure: process.env.SMTP_SECURE,
-        user: process.env.SMTP_USER ? '***@domain.com' : 'not set'
+        user: process.env.SMTP_USER ? process.env.SMTP_USER.replace(/(.{3}).*(@.*)/, '$1***$2') : 'not set'
       });
       return false;
-    }
-  }
-
-  // Метод для отправки тестового письма
-  async sendTestEmail(recipientEmail = 'test@example.com') {
-    try {
-      const mailOptions = {
-        from: {
-          name: process.env.FROM_NAME || 'Career Growth Insights',
-          address: process.env.FROM_EMAIL || process.env.SMTP_USER || 'test@ditum.kz'
-        },
-        to: recipientEmail,
-        subject: 'Тест отправки email - Career Growth Insights',
-        html: `
-          <h1>✅ Email сервис работает!</h1>
-          <p>Это тестовое письмо от платформы Career Growth Insights.</p>
-          <p>Время отправки: ${new Date().toLocaleString('ru-RU')}</p>
-          <p>Сервер: ${process.env.SMTP_HOST || 'не указан'}</p>
-        `
-      };
-
-      const result = await this.transporter.sendMail(mailOptions);
-      console.log('✅ Test email sent successfully:', result.messageId);
-      return result;
-
-    } catch (error) {
-      console.error('❌ Failed to send test email:', error);
-      throw error;
     }
   }
 }
