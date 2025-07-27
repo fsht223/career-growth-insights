@@ -257,18 +257,7 @@ const TestQuestions = () => {
     }
   };
 
-  const handlePrevious = () => {
-    if (currentQuestion > 0) {
-      setCurrentQuestion(prev => prev - 1);
-      
-      // Load previous answers if they exist
-      const prevAnswer = answers[currentQuestion - 1];
-      if (prevAnswer) {
-        setSelectedFirst(prevAnswer.first);
-        setSelectedSecond(prevAnswer.second);
-      }
-    }
-  };
+
 
   const handleTestCompletion = async () => {
     try {
@@ -519,17 +508,7 @@ const TestQuestions = () => {
             )}
 
             {/* Navigation Buttons */}
-            <div className="flex justify-between">
-              <Button
-                onClick={handlePrevious}
-                disabled={currentQuestion === 0}
-                variant="outline"
-                className="px-6"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                {t('testQuestions.previous')}
-              </Button>
-
+            <div className="flex justify-end">
               <Button
                 onClick={handleNext}
                 disabled={
