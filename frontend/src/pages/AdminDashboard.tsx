@@ -207,10 +207,10 @@ const AdminDashboard: React.FC = () => {
                 return;
             }
 
-            if (newCoach.password !== newCoach.confirmPassword) {
+        if (newCoach.password !== newCoach.confirmPassword) {
                 setError('Пароли не совпадают');
-                return;
-            }
+            return;
+        }
 
             console.log('🔄 Creating coach...');
             const token = localStorage.getItem('adminToken');
@@ -221,9 +221,9 @@ const AdminDashboard: React.FC = () => {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    email: newCoach.email,
-                    firstName: newCoach.firstName,
-                    lastName: newCoach.lastName,
+                email: newCoach.email,
+                firstName: newCoach.firstName,
+                lastName: newCoach.lastName,
                     password: newCoach.password
                 })
             });
@@ -286,7 +286,7 @@ const AdminDashboard: React.FC = () => {
             const data = await response.json();
             console.log('✅ Question saved:', data);
 
-            setEditingQuestion({
+        setEditingQuestion({
                 id: null,
                 text: '',
                 group: '',
@@ -545,20 +545,20 @@ const AdminDashboard: React.FC = () => {
                                 </CardContent>
                             </Card>
 
-                            <Card>
+                        <Card>
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                     <CardTitle className="text-sm font-medium">Среднее время</CardTitle>
                                     <Target className="h-4 w-4 text-muted-foreground" />
-                                </CardHeader>
-                                <CardContent>
+                            </CardHeader>
+                            <CardContent>
                                     <div className="text-2xl font-bold">
                                         {Math.round(stats.avgCompletionTime)} мин
-                                    </div>
+                                </div>
                                     <p className="text-xs text-muted-foreground">
                                         Прохождения теста
                                     </p>
-                                </CardContent>
-                            </Card>
+                            </CardContent>
+                        </Card>
                         </div>
                     </TabsContent>
 
@@ -597,7 +597,7 @@ const AdminDashboard: React.FC = () => {
 
                         <Card>
                             <CardContent className="p-6">
-                                <div className="space-y-4">
+                        <div className="space-y-4">
                                     {filteredCoaches.length === 0 ? (
                                         <div className="text-center py-8">
                                             <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -608,14 +608,14 @@ const AdminDashboard: React.FC = () => {
                                     ) : (
                                         filteredCoaches.map((coach) => (
                                             <div key={coach.id} className="flex items-center justify-between p-4 border rounded-lg">
-                                                <div className="flex-1">
+                                            <div className="flex-1">
                                                     <h3 className="font-medium">{coach.firstName} {coach.lastName}</h3>
-                                                    <p className="text-sm text-gray-500">{coach.email}</p>
+                                                        <p className="text-sm text-gray-500">{coach.email}</p>
                                                     <p className="text-xs text-gray-400">
                                                         Создан: {new Date(coach.createdAt).toLocaleDateString()}
                                                         • Тестов: {coach.testsCreated}
                                                     </p>
-                                                </div>
+                                                    </div>
                                                 <div className="flex items-center space-x-2">
                                                     <Badge
                                                         variant={
@@ -626,24 +626,24 @@ const AdminDashboard: React.FC = () => {
                                                         {coach.status === 'active' ? 'Активен' :
                                                             coach.status === 'pending' ? 'Ожидает' : 'Неактивен'}
                                                     </Badge>
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
                                                         onClick={() => updateCoachStatus(coach.id, coach.status === 'active' ? 'inactive' : 'active')}
-                                                    >
+                                                >
                                                         {coach.status === 'active' ? (
                                                             <Lock className="h-4 w-4" />
                                                         ) : (
-                                                            <Unlock className="h-4 w-4" />
+                                                        <Unlock className="h-4 w-4" />
                                                         )}
-                                                    </Button>
-                                                </div>
+                                                </Button>
+                                            </div>
                                             </div>
                                         ))
                                     )}
-                                </div>
-                            </CardContent>
-                        </Card>
+                                        </div>
+                                    </CardContent>
+                                </Card>
                     </TabsContent>
 
                     {/* Вопросы */}
@@ -678,7 +678,7 @@ const AdminDashboard: React.FC = () => {
 
                         <Card>
                             <CardContent className="p-6">
-                                <div className="space-y-4">
+                        <div className="space-y-4">
                                     {questions.length === 0 ? (
                                         <div className="text-center py-8">
                                             <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -688,15 +688,15 @@ const AdminDashboard: React.FC = () => {
                                         questions.map((question) => (
                                             <div key={question.id} className="p-4 border rounded-lg">
                                                 <div className="flex justify-between items-start">
-                                                    <div className="flex-1">
+                                            <div className="flex-1">
                                                         <p className="font-medium">{question.text}</p>
                                                         <div className="flex items-center space-x-2 mt-2">
                                                             <Badge variant="outline">{question.group}</Badge>
                                                             <Badge variant="secondary">{question.category}</Badge>
                                                             <Badge variant="outline">{question.language}</Badge>
-                                                        </div>
                                                     </div>
-                                                    <div className="flex space-x-2">
+                                            </div>
+                                            <div className="flex space-x-2">
                                                         <Button
                                                             variant="outline"
                                                             size="sm"
@@ -712,28 +712,28 @@ const AdminDashboard: React.FC = () => {
                                                             }}
                                                         >
                                                             <Edit className="h-4 w-4" />
-                                                        </Button>
+                                                </Button>
                                                         <Button
                                                             variant="outline"
                                                             size="sm"
                                                             onClick={() => handleDeleteQuestion(question.id)}
                                                         >
                                                             <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    </div>
+                                                </Button>
+                                            </div>
                                                 </div>
                                             </div>
                                         ))
                                     )}
-                                </div>
-                            </CardContent>
-                        </Card>
+                                        </div>
+                                    </CardContent>
+                                </Card>
                     </TabsContent>
 
                     {/* Настройки */}
                     <TabsContent value="settings" className="space-y-6">
                         <h2 className="text-2xl font-bold">Системные настройки</h2>
-                        <Card>
+                            <Card>
                             <CardContent className="p-6">
                                 <div className="space-y-4">
                                     <div className="flex justify-between items-center">
@@ -752,9 +752,9 @@ const AdminDashboard: React.FC = () => {
                                         <span>Последнее обновление:</span>
                                         <span>{new Date().toLocaleString()}</span>
                                     </div>
-                                </div>
-                            </CardContent>
-                        </Card>
+                                    </div>
+                                </CardContent>
+                            </Card>
                     </TabsContent>
                 </Tabs>
             </div>
@@ -851,22 +851,22 @@ const AdminDashboard: React.FC = () => {
                             />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
+                        <div className="space-y-2">
                                 <Label htmlFor="question-group">Группа мотивации *</Label>
-                                <Select
-                                    value={editingQuestion.group}
+                            <Select
+                                value={editingQuestion.group}
                                     onValueChange={(value) => setEditingQuestion({...editingQuestion, group: value})}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Выберите группу" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {motivationalGroups.map(group => (
-                                            <SelectItem key={group} value={group}>{group}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Выберите группу" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {motivationalGroups.map(group => (
+                                        <SelectItem key={group} value={group}>{group}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
                             <div className="space-y-2">
                                 <Label htmlFor="question-category">Категория</Label>
                                 <Select
@@ -884,22 +884,22 @@ const AdminDashboard: React.FC = () => {
                                     </SelectContent>
                                 </Select>
                             </div>
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="question-language">Язык</Label>
-                            <Select
-                                value={editingQuestion.language}
-                                onValueChange={(value: 'ru' | 'en') =>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="question-language">Язык</Label>
+                                <Select
+                                    value={editingQuestion.language}
+                                    onValueChange={(value: 'ru' | 'en') =>
                                     setEditingQuestion({...editingQuestion, language: value})}
-                            >
+                                >
                                 <SelectTrigger className="w-32">
                                     <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="ru">Русский</SelectItem>
-                                    <SelectItem value="en">English</SelectItem>
-                                </SelectContent>
-                            </Select>
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="ru">Русский</SelectItem>
+                                        <SelectItem value="en">English</SelectItem>
+                                    </SelectContent>
+                                </Select>
                         </div>
                         <div className="flex space-x-2">
                             <Button

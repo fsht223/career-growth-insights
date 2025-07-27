@@ -8,6 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { CheckCircle, ArrowRight, ArrowLeft, Save, AlertTriangle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { Toaster } from "@/components/ui/toaster";
 import ApiService from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useQuestionTranslation, useMotivationalFactorTranslation, useOptionTextTranslation } from '@/utils/translationUtils';
@@ -180,12 +181,18 @@ const TestQuestions = () => {
   };
 
   const handleFirstSelection = (optionId: string) => {
-    setSelectedFirst(optionId);
-    setSelectedSecond(''); // Reset second selection
+    // Only allow selection if no first option is selected yet
+    if (!selectedFirst) {
+      setSelectedFirst(optionId);
+      setSelectedSecond(''); // Reset second selection
+    }
   };
 
   const handleSecondSelection = (optionId: string) => {
-    setSelectedSecond(optionId);
+    // Only allow selection if no second option is selected yet and first is selected
+    if (!selectedSecond && selectedFirst) {
+      setSelectedSecond(optionId);
+    }
   };
 
   const handleMotivationalSelection = (option: string) => {
@@ -411,25 +418,33 @@ const TestQuestions = () => {
                     {t('testQuestions.selectFirst')}
                   </h3>
                   <div className="space-y-3">
-                    {currentQ?.options.map((option) => (
-                      <Button
-                        key={option.id}
-                        variant={selectedFirst === option.id ? "default" : "outline"}
-                        className={`w-full p-4 h-auto text-left justify-start transition-all ${
-                          selectedFirst === option.id
-                            ? 'bg-blue-900 text-white border-blue-900'
-                            : 'hover:bg-blue-50 hover:border-blue-300'
-                        }`}
-                        onClick={() => handleFirstSelection(option.id)}
-                      >
-                        <div className="flex items-center space-x-3">
-                          {selectedFirst === option.id && (
-                            <CheckCircle className="w-5 h-5" />
-                          )}
-                          <span>{translateOptionText(option.text)}</span>
-                        </div>
-                      </Button>
-                    ))}
+                    {currentQ?.options.map((option) => {
+                      const isSelected = selectedFirst === option.id;
+                      const isDisabled = selectedFirst && !isSelected;
+                      
+                      return (
+                        <Button
+                          key={option.id}
+                          variant={isSelected ? "default" : "outline"}
+                          className={`w-full p-4 h-auto text-left justify-start transition-all ${
+                            isSelected
+                              ? 'bg-blue-900 text-white border-blue-900'
+                              : isDisabled
+                              ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                              : 'hover:bg-blue-50 hover:border-blue-300'
+                          }`}
+                          onClick={() => handleFirstSelection(option.id)}
+                          disabled={isDisabled}
+                        >
+                          <div className="flex items-center space-x-3">
+                            {isSelected && (
+                              <CheckCircle className="w-5 h-5" />
+                            )}
+                            <span>{translateOptionText(option.text)}</span>
+                          </div>
+                        </Button>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -442,25 +457,33 @@ const TestQuestions = () => {
                     <div className="space-y-3">
                       {currentQ?.options
                         .filter(option => option.id !== selectedFirst)
-                        .map((option) => (
-                          <Button
-                            key={option.id}
-                            variant={selectedSecond === option.id ? "default" : "outline"}
-                            className={`w-full p-4 h-auto text-left justify-start transition-all ${
-                              selectedSecond === option.id
-                                ? 'bg-rose-600 text-white border-rose-600'
-                                : 'hover:bg-rose-50 hover:border-rose-300'
-                            }`}
-                            onClick={() => handleSecondSelection(option.id)}
-                          >
-                            <div className="flex items-center space-x-3">
-                              {selectedSecond === option.id && (
-                                <CheckCircle className="w-5 h-5" />
-                              )}
-                              <span>{translateOptionText(option.text)}</span>
-                            </div>
-                          </Button>
-                        ))}
+                        .map((option) => {
+                          const isSelected = selectedSecond === option.id;
+                          const isDisabled = selectedSecond && !isSelected;
+                          
+                          return (
+                            <Button
+                              key={option.id}
+                              variant={isSelected ? "default" : "outline"}
+                              className={`w-full p-4 h-auto text-left justify-start transition-all ${
+                                isSelected
+                                  ? 'bg-rose-600 text-white border-rose-600'
+                                  : isDisabled
+                                  ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                                  : 'hover:bg-rose-50 hover:border-rose-300'
+                              }`}
+                              onClick={() => handleSecondSelection(option.id)}
+                              disabled={isDisabled}
+                            >
+                              <div className="flex items-center space-x-3">
+                                {isSelected && (
+                                  <CheckCircle className="w-5 h-5" />
+                                )}
+                                <span>{translateOptionText(option.text)}</span>
+                              </div>
+                            </Button>
+                          );
+                        })}
                     </div>
                   </div>
                 )}
@@ -540,6 +563,9 @@ const TestQuestions = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Toast container */}
+      <Toaster />
     </div>
   );
 };

@@ -12,6 +12,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { FileText, Users, Clock, Shield, Play, RotateCcw, AlertTriangle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { Toaster } from "@/components/ui/toaster"
 import ApiService from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -109,11 +110,17 @@ const TestLanding = () => {
       
     } catch (error: any) {
       console.error('Registration failed:', error);
-      
-      if (error.message?.includes('already completed')) {
+      const msg = error.message?.toLowerCase() || '';
+      if (msg.includes('restricted to a specific email')) {
         toast({
-          title: t('testLanding.alreadyCompleted'),
-          description: t('testLanding.alreadyCompleted'),
+          title: t('testLanding.restrictedEmailTitle'),
+          description: t('testLanding.restrictedEmailDescription'),
+          variant: "destructive",
+        });
+      } else if (msg.includes('already completed')) {
+        toast({
+          title: t('testLanding.testAlreadyCompletedTitle'),
+          description: t('testLanding.testAlreadyCompletedDescription'),
           variant: "destructive",
         });
       } else {
@@ -208,52 +215,7 @@ const TestLanding = () => {
           </p>
         </div>
 
-        {/* Info Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card className="text-center">
-            <CardContent className="p-6">
-              <Clock className="w-8 h-8 text-blue-600 mx-auto mb-3" />
-              <h3 className="font-semibold text-slate-800 mb-2">{t('testLanding.time')}</h3>
-              <p className="text-sm text-slate-600">{t('testLanding.timeLabel')}</p>
-            </CardContent>
-          </Card>
-          <Card className="text-center">
-            <CardContent className="p-6">
-              <Users className="w-8 h-8 text-rose-600 mx-auto mb-3" />
-              <h3 className="font-semibold text-slate-800 mb-2">{t('testLanding.questions')}</h3>
-              <p className="text-sm text-slate-600">{t('testLanding.analysis')}</p>
-            </CardContent>
-          </Card>
-          <Card className="text-center">
-            <CardContent className="p-6">
-              <Shield className="w-8 h-8 text-green-600 mx-auto mb-3" />
-              <h3 className="font-semibold text-slate-800 mb-2">{t('testLanding.gdpr')}</h3>
-              <p className="text-sm text-slate-600">{t('testLanding.dataProtection')}</p>
-            </CardContent>
-          </Card>
-          <Card className="text-center">
-            <CardContent className="p-6">
-              <FileText className="w-8 h-8 text-purple-600 mx-auto mb-3" />
-              <h3 className="font-semibold text-slate-800 mb-2">{t('testLanding.pdf')}</h3>
-              <p className="text-sm text-slate-600">{t('testLanding.detailedResults')}</p>
-            </CardContent>
-          </Card>
-        </div>
 
-        {/* Important Notice */}
-        <Card className="mb-8 border-blue-200 bg-blue-50">
-          <CardContent className="p-6">
-            <div className="flex items-start space-x-3">
-              <Shield className="w-6 h-6 text-blue-600 mt-1" />
-              <div>
-                <h3 className="font-semibold text-blue-800 mb-2">{t('testLanding.progressSave')}</h3>
-                <p className="text-blue-700 text-sm">
-                  {t('testLanding.progressInfo')}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Registration Form */}
         <Card className="max-w-2xl mx-auto shadow-xl border-0">
@@ -408,6 +370,46 @@ const TestLanding = () => {
           </CardContent>
         </Card>
 
+        {/* Important Notice */}
+        <Card className="mb-8 mt-10 border-blue-200 bg-blue-50">
+          <CardContent className="p-6">
+            <div className="flex items-start space-x-3">
+              <Shield className="w-6 h-6 text-blue-600 mt-1" />
+              <div>
+                <h3 className="font-semibold text-blue-800 mb-2">{t('testLanding.progressSave')}</h3>
+                <p className="text-blue-700 text-sm">
+                  {t('testLanding.progressInfo')}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Info Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Card className="text-center">
+            <CardContent className="p-6">
+              <Clock className="w-8 h-8 text-blue-600 mx-auto mb-3" />
+              <h3 className="font-semibold text-slate-800 mb-2">{t('testLanding.time')}</h3>
+              <p className="text-sm text-slate-600">{t('testLanding.timeLabel')}</p>
+            </CardContent>
+          </Card>
+          <Card className="text-center">
+            <CardContent className="p-6">
+              <Users className="w-8 h-8 text-rose-600 mx-auto mb-3" />
+              <h3 className="font-semibold text-slate-800 mb-2">{t('testLanding.questions')}</h3>
+              <p className="text-sm text-slate-600">{t('testLanding.analysis')}</p>
+            </CardContent>
+          </Card>
+          <Card className="text-center">
+            <CardContent className="p-6">
+              <Shield className="w-8 h-8 text-green-600 mx-auto mb-3" />
+              <h3 className="font-semibold text-slate-800 mb-2">{t('testLanding.gdpr')}</h3>
+              <p className="text-sm text-slate-600">{t('testLanding.dataProtection')}</p>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* FAQ Section */}
         <Card className="max-w-2xl mx-auto mt-8">
           <CardHeader className="-mb-8">
@@ -459,6 +461,9 @@ const TestLanding = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Toast container - Add this at the bottom */}
+      <Toaster />
     </div>
   );
 };

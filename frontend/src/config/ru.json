@@ -68,7 +68,7 @@
   "testLanding.lastName": "Фамилия",
   "testLanding.email": "Email",
   "testLanding.profession": "Профессия",
-  "testLanding.gdpr": "Я принимаю политику конфиденциальности",
+  "testLanding.gdpr": "Политика конфиденциальности",
   "testLanding.button": "Начать тест",
   "testLanding.loading": "Загрузка теста...",
   "testLanding.error": "Тест не найден или недоступен",
@@ -354,5 +354,9 @@
   "questionOption.Мне нравится, когда команда регулярно общается вне работы.": "Мне нравится, когда команда регулярно общается вне работы.",
   "questionOption.Факты определяют мои решения.": "Факты определяют мои решения.",
   "questionOption.Я быстро адаптируюсь к новым ситуациям.": "Я быстро адаптируюсь к новым ситуациям.",
-  "questionOption.У меня высокий уровень самоконтроля эмоций.": "У меня высокий уровень самоконтроля эмоций."
+  "questionOption.У меня высокий уровень самоконтроля эмоций.": "У меня высокий уровень самоконтроля эмоций.",
+  "testLanding.restrictedEmailTitle": "Введённый вами email не разрешён для этого теста.",
+  "testLanding.restrictedEmailDescription": "Попробуйте другой или обратитесь к вашему коучу.",
+  "testLanding.testAlreadyCompletedTitle": "Этот тест уже был завершён.",
+  "testLanding.testAlreadyCompletedDescription": "Пожалуйста, проверьте результаты или обратитесь к вашему коучу."
 } 

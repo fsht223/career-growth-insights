@@ -68,7 +68,7 @@
   "testLanding.lastName": "Last Name",
   "testLanding.email": "Email",
   "testLanding.profession": "Profession",
-  "testLanding.gdpr": "I accept the privacy policy",
+  "testLanding.gdpr": "Зrivacy policy",
   "testLanding.button": "Start Test",
   "testLanding.loading": "Loading test...",
   "testLanding.error": "Test not found or unavailable",
@@ -354,5 +354,9 @@
   "questionOption.Мне нравится, когда команда регулярно общается вне работы.": "I like when the team regularly socializes outside of work.",
   "questionOption.Факты определяют мои решения.": "Facts determine my decisions.",
   "questionOption.Я быстро адаптируюсь к новым ситуациям.": "I quickly adapt to new situations.",
-  "questionOption.У меня высокий уровень самоконтроля эмоций.": "I have a high level of emotional self-control."
+  "questionOption.У меня высокий уровень самоконтроля эмоций.": "I have a high level of emotional self-control.",
+  "testLanding.restrictedEmailTitle": "The email you entered is not allowed for this test.",
+  "testLanding.restrictedEmailDescription": "Try another one or contact your coach.",
+  "testLanding.testAlreadyCompletedTitle": "This test has already been completed.",
+  "testLanding.testAlreadyCompletedDescription": "Please check the results or contact your coach."
 } 
