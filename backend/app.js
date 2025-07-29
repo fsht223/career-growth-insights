@@ -1,131 +1,160 @@
-// Замените содержимое backend/app.js
+// Улучшенная версия CORS настроек в backend/app.js
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
-const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Безопасные CORS настройки в зависимости от окружения
+const isDevelopment = process.env.NODE_ENV === 'development';
+const isProduction = process.env.NODE_ENV === 'production';
+
+let allowedOrigins = [];
+
+if (isDevelopment) {
+  // В разработке разрешаем localhost
+  allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:80',
+    process.env.FRONTEND_URL
+  ];
+} else if (isProduction) {
+  // В продакшене только официальные домены
+  allowedOrigins = [
+    'https://ditum.kz',
+    'https://www.ditum.kz',
+    process.env.FRONTEND_URL
+  ];
+} else {
+  // Fallback - используем переменную окружения
+  allowedOrigins = [process.env.FRONTEND_URL];
+}
+
+// Убираем undefined значения
+allowedOrigins = allowedOrigins.filter(Boolean);
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Разрешаем запросы без origin (например, мобильные приложения, Postman)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.warn(`🚫 CORS blocked origin: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  preflightContinue: false,
+  optionsSuccessStatus: 200
+};
+
 // Middleware
-app.use(helmet());
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true
+app.use(helmet({
+  crossOriginEmbedderPolicy: false,
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+    },
+  }
 }));
-app.use(morgan('combined'));
+
+app.use(cors(corsOptions));
+app.use(morgan(isDevelopment ? 'dev' : 'combined'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Health check
+// Health check с информацией о CORS
 app.get('/health', (req, res) => {
   res.json({
     status: 'OK',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    cors: {
+      allowedOrigins: isDevelopment ? allowedOrigins : ['***masked for security***'],
+      requestOrigin: req.headers.origin || 'none'
+    },
+    version: '1.0.0'
+  });
+});
+
+// Остальной код остается таким же...
+// Test endpoint
+app.get('/api/test', (req, res) => {
+  res.json({
+    message: 'Backend API is working!',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV
   });
 });
 
-// Test endpoint
-app.get('/api/test', (req, res) => {
-  res.json({ message: 'Backend API is working!', timestamp: new Date().toISOString() });
-});
-
-// Routes with error handling
+// Routes loading...
 try {
-  console.log('Loading routes...');
-
-  // Admin routes first
   const adminRoutes = require('./routes/admin');
   app.use('/api/admin', adminRoutes);
-  console.log('✅ Admin routes loaded');
 
-  // Other routes
   const authRoutes = require('./routes/auth');
   app.use('/api/auth', authRoutes);
-  console.log('✅ Auth routes loaded');
 
   const testRoutes = require('./routes/tests');
   app.use('/api/tests', testRoutes);
-  console.log('✅ Test routes loaded');
 
   const sessionRoutes = require('./routes/sessions');
   app.use('/api/test', sessionRoutes);
-  console.log('✅ Session routes loaded');
 
   const reportRoutes = require('./routes/reports');
   app.use('/api/reports', reportRoutes);
-  console.log('✅ Report routes loaded');
 
   const dashboardRoutes = require('./routes/dashboard');
   app.use('/api/dashboard', dashboardRoutes);
-  console.log('✅ Dashboard routes loaded');
 
   console.log('✅ All routes loaded successfully');
-
 } catch (error) {
   console.error('❌ Error loading routes:', error.message);
-  console.error('Stack:', error.stack);
 }
 
-// List all routes for debugging
-app.get('/api/routes', (req, res) => {
-  const routes = [];
-
-  app._router.stack.forEach((middleware) => {
-    if (middleware.route) {
-      // Direct route
-      routes.push({
-        path: middleware.route.path,
-        method: Object.keys(middleware.route.methods)[0].toUpperCase()
-      });
-    } else if (middleware.name === 'router') {
-      // Router middleware
-      middleware.handle.stack.forEach((handler) => {
-        if (handler.route) {
-          const path = middleware.regexp.source
-              .replace('^\\', '')
-              .replace('\\/?(?=\\/|$)', '')
-              .replace(/\\/g, '');
-          routes.push({
-            path: `${path}${handler.route.path}`,
-            method: Object.keys(handler.route.methods)[0].toUpperCase()
-          });
-        }
-      });
-    }
-  });
-
-  res.json({ routes });
-});
-
-// Error handling middleware
+// Error handling
 app.use((err, req, res, next) => {
   console.error('Server error:', err.stack);
-  res.status(500).json({ error: 'Something went wrong!', details: err.message });
+
+  if (err.message === 'Not allowed by CORS') {
+    return res.status(403).json({
+      error: 'CORS policy violation',
+      message: 'Origin not allowed'
+    });
+  }
+
+  res.status(500).json({
+    error: 'Internal server error',
+    message: isDevelopment ? err.message : 'Something went wrong'
+  });
 });
 
 // 404 handler
 app.use((req, res) => {
-  console.log(`❌ 404: ${req.method} ${req.url}`);
   res.status(404).json({
     error: 'Route not found',
     url: req.url,
-    method: req.method,
-    hint: 'Check /api/routes for available endpoints'
+    method: req.method
   });
 });
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🚀 Server is running on port ${PORT}`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
-  console.log(`🏥 Health check: http://localhost:${PORT}/health`);
-  console.log(`🔧 Test API: http://localhost:${PORT}/api/test`);
-  console.log(`👑 Admin test: http://localhost:${PORT}/api/admin/test`);
-  console.log(`📋 Routes list: http://localhost:${PORT}/api/routes`);
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🔗 Allowed origins:`, isDevelopment ? allowedOrigins : ['***production origins***']);
+  console.log(`🏥 Health: http://localhost:${PORT}/health`);
 });
 
 module.exports = app;
