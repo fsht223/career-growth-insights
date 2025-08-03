@@ -56,11 +56,11 @@ log "✅ Очистка завершена"
 log "👉 ЭТАП 4: Сборка с исправленной конфигурацией"
 log "⏱️  Сборка frontend образа с правильной nginx конфигурацией..."
 
-# Сборка frontend образа
+# Сборка frontend образа (ИСПРАВЛЕНО: ditum.kz вместо localhost)
 docker build -f frontend/Dockerfile \
-  --build-arg VITE_API_URL=http://localhost/api \
+  --build-arg VITE_API_URL=http://ditum.kz/api \
   --build-arg VITE_APP_NAME="Career Growth Insights" \
-  --build-arg VITE_APP_DOMAIN=localhost \
+  --build-arg VITE_APP_DOMAIN=ditum.kz \
   -t career-growth-insights-frontend ./frontend
 
 check_error "Ошибка при сборке frontend образа"
@@ -121,4 +121,4 @@ echo "  Health Check:      curl http://localhost/nginx-health"
 echo "  Основной сайт:     curl -I http://localhost/"
 echo "  API Health:        curl http://localhost/api/health"
 echo ""
-echo "✅ Career Growth Insights готов к работе!" 
+echo "✅ Career Growth Insights готов к работе!"
