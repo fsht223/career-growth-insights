@@ -16,9 +16,9 @@ ARG VITE_API_URL
 ARG VITE_APP_NAME
 ARG VITE_APP_DOMAIN
 
-ENV VITE_API_URL=${VITE_API_URL:-https://ditum.kz/api}
-ENV VITE_APP_NAME=${VITE_APP_NAME:-"Ditum Career Testing"}
-ENV VITE_APP_DOMAIN=${VITE_APP_DOMAIN:-ditum.kz}
+ENV VITE_API_URL=${VITE_API_URL:-http://localhost/api}
+ENV VITE_APP_NAME=${VITE_APP_NAME:-"Career Growth Insights"}
+ENV VITE_APP_DOMAIN=${VITE_APP_DOMAIN:-localhost}
 
 # Сборка приложения для продакшена
 RUN npm run build
@@ -41,8 +41,8 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 # Создание файла конфигурации приложения
 RUN echo 'window.APP_CONFIG = { \
   API_BASE_URL: "/api", \
-  APP_NAME: "${VITE_APP_NAME:-Ditum Career Testing}", \
-  DOMAIN: "${VITE_APP_DOMAIN:-ditum.kz}", \
+  APP_NAME: "${VITE_APP_NAME:-Career Growth Insights}", \
+  DOMAIN: "${VITE_APP_DOMAIN:-localhost}", \
   SUPPORT_EMAIL: "support@ditum.kz", \
   VERSION: "1.0.0" \
 };' > /usr/share/nginx/html/config.js

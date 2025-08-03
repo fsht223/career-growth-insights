@@ -70,9 +70,6 @@ services:
         - VITE_APP_DOMAIN=${VITE_APP_DOMAIN:-localhost}
     container_name: career_growth_frontend
     restart: unless-stopped
-    volumes:
-      # Конфигурация nginx (без SSL)
-      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     ports:
       - "80:80"        # HTTP основной порт
     networks:
@@ -81,7 +78,7 @@ services:
       backend:
         condition: service_started
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/nginx-health"]
       interval: 30s
       timeout: 10s
       retries: 3
