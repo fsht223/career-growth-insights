@@ -57,7 +57,7 @@ RUN chown -R nginx:nginx /usr/share/nginx/html /var/cache/nginx /var/log/nginx
 
 # Проверка здоровья
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:80 || exit 1
+    CMD curl -f http://localhost:80/nginx-health || exit 1
 
 # Экспорт портов
 EXPOSE 80
