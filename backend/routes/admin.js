@@ -39,7 +39,7 @@ const authenticateAdmin = async (req, res, next) => {
 // Login
 router.post('/login', async (req, res) => {
     try {
-        console.log('🔐 Admin login attempt:', req.body);
+      
         const { email, password } = req.body;
 
         if (!email || !password) {
@@ -65,7 +65,7 @@ router.post('/login', async (req, res) => {
 
         const token = jwt.sign({ id: admin.id, email: admin.email, role: admin.role }, process.env.JWT_SECRET, { expiresIn: '24h' });
 
-        console.log('✅ Login successful for:', admin.email);
+  
         res.json({
             token,
             user: {
@@ -120,7 +120,7 @@ router.get('/verify', async (req, res) => {
 
 // Logout
 router.post('/logout', (req, res) => {
-    console.log('🚪 Admin logout');
+  
     res.json({ message: 'Успешный выход' });
 });
 
@@ -129,7 +129,7 @@ router.post('/logout', (req, res) => {
 // Get admin stats
 router.get('/stats', authenticateAdmin, async (req, res) => {
     try {
-        console.log('📊 Fetching admin stats...');
+    
 
         const stats = await pool.query(`
       SELECT 
@@ -161,7 +161,7 @@ router.get('/stats', authenticateAdmin, async (req, res) => {
 // Get all coaches
 router.get('/coaches', authenticateAdmin, async (req, res) => {
     try {
-        console.log('👥 Fetching coaches...');
+    
         const query = `
       SELECT u.id, u.email, u.first_name, u.last_name, u.status, u.created_at,
              COUNT(t.id) as tests_created
@@ -172,7 +172,7 @@ router.get('/coaches', authenticateAdmin, async (req, res) => {
       ORDER BY u.created_at DESC
     `;
         const result = await pool.query(query);
-        console.log(`✅ Found ${result.rows.length} coaches`);
+    
         res.json(result.rows);
     } catch (error) {
         console.error('Error fetching coaches:', error);
@@ -183,7 +183,7 @@ router.get('/coaches', authenticateAdmin, async (req, res) => {
 // Create coach
 router.post('/coaches', authenticateAdmin, async (req, res) => {
     try {
-        console.log('➕ Creating new coach...');
+    
         const { email, firstName, lastName, password } = req.body;
 
         // Validation
@@ -208,7 +208,7 @@ router.post('/coaches', authenticateAdmin, async (req, res) => {
     `, [email, hashedPassword, firstName, lastName, activationToken]);
 
         const newCoach = result.rows[0];
-        console.log('✅ Coach created:', newCoach.email);
+    
 
         res.status(201).json({
             message: 'Coach created successfully',
@@ -224,7 +224,7 @@ router.post('/coaches', authenticateAdmin, async (req, res) => {
 // Update coach status
 router.put('/coaches/:id/status', authenticateAdmin, async (req, res) => {
     try {
-        console.log('🔄 Updating coach status...');
+    
         const { id } = req.params;
         const { status } = req.body;
 
@@ -246,7 +246,7 @@ router.put('/coaches/:id/status', authenticateAdmin, async (req, res) => {
         }
 
         const updatedCoach = result.rows[0];
-        console.log(`✅ Coach ${updatedCoach.email} status updated to ${status}`);
+    
 
         res.json({
             message: 'Coach status updated successfully',
@@ -261,7 +261,7 @@ router.put('/coaches/:id/status', authenticateAdmin, async (req, res) => {
 // Delete coach
 router.delete('/coaches/:id', authenticateAdmin, async (req, res) => {
     try {
-        console.log('🗑️ Deleting coach...');
+    
         const { id } = req.params;
 
         // Check if coach exists
@@ -273,7 +273,7 @@ router.delete('/coaches/:id', authenticateAdmin, async (req, res) => {
         // Delete coach (this will cascade delete tests due to foreign key)
         await pool.query('DELETE FROM users WHERE id = $1', [id]);
 
-        console.log(`✅ Coach ${coach.rows[0].email} deleted`);
+    
         res.json({ message: 'Coach deleted successfully' });
     } catch (error) {
         console.error('Error deleting coach:', error);
@@ -284,7 +284,7 @@ router.delete('/coaches/:id', authenticateAdmin, async (req, res) => {
 // Reset coach password
 router.post('/coaches/:id/reset-password', authenticateAdmin, async (req, res) => {
     try {
-        console.log('🔑 Resetting coach password...');
+    
         const { id } = req.params;
         const { newPassword } = req.body;
 
@@ -305,7 +305,7 @@ router.post('/coaches/:id/reset-password', authenticateAdmin, async (req, res) =
             return res.status(404).json({ error: 'Coach not found' });
         }
 
-        console.log(`✅ Password reset for coach: ${result.rows[0].email}`);
+    
         res.json({ message: 'Password reset successfully' });
     } catch (error) {
         console.error('Error resetting password:', error);
@@ -318,13 +318,13 @@ router.post('/coaches/:id/reset-password', authenticateAdmin, async (req, res) =
 // Get questions
 router.get('/questions', authenticateAdmin, async (req, res) => {
     try {
-        console.log('❓ Fetching questions...');
+    
         const { language = 'ru' } = req.query;
         const result = await pool.query(
             'SELECT * FROM questions WHERE language = $1 ORDER BY id',
             [language]
         );
-        console.log(`✅ Found ${result.rows.length} questions for language: ${language}`);
+    
         res.json(result.rows);
     } catch (error) {
         console.error('Error fetching questions:', error);
@@ -335,7 +335,7 @@ router.get('/questions', authenticateAdmin, async (req, res) => {
 // Add/Update question
 router.post('/questions', authenticateAdmin, async (req, res) => {
     try {
-        console.log('💾 Saving question...');
+    
         const { id, text, group, category, language } = req.body;
 
         if (!text || !group || !category || !language) {
@@ -351,7 +351,7 @@ router.post('/questions', authenticateAdmin, async (req, res) => {
         WHERE id = $5
         RETURNING *
       `, [text, group, category, language, id]);
-            console.log(`✅ Question ${id} updated`);
+        
         } else {
             // Create new
             result = await pool.query(`
@@ -359,7 +359,7 @@ router.post('/questions', authenticateAdmin, async (req, res) => {
         VALUES ($1, $2, $3, $4)
         RETURNING *
       `, [text, group, category, language]);
-            console.log(`✅ New question created with ID: ${result.rows[0].id}`);
+        
         }
 
         res.json(result.rows[0]);
@@ -372,7 +372,7 @@ router.post('/questions', authenticateAdmin, async (req, res) => {
 // Delete question
 router.delete('/questions/:id', authenticateAdmin, async (req, res) => {
     try {
-        console.log('🗑️ Deleting question...');
+    
         const { id } = req.params;
 
         const result = await pool.query('DELETE FROM questions WHERE id = $1 RETURNING question_text', [id]);
@@ -381,7 +381,7 @@ router.delete('/questions/:id', authenticateAdmin, async (req, res) => {
             return res.status(404).json({ error: 'Question not found' });
         }
 
-        console.log(`✅ Question ${id} deleted`);
+    
         res.json({ message: 'Question deleted successfully' });
     } catch (error) {
         console.error('Error deleting question:', error);
@@ -394,13 +394,13 @@ router.delete('/questions/:id', authenticateAdmin, async (req, res) => {
 // Get golden lines
 router.get('/golden-lines', authenticateAdmin, async (req, res) => {
     try {
-        console.log('📏 Fetching golden lines...');
+    
         const { language = 'ru' } = req.query;
         const result = await pool.query(
             'SELECT * FROM golden_lines WHERE language = $1 ORDER BY profession',
             [language]
         );
-        console.log(`✅ Found ${result.rows.length} golden lines`);
+    
         res.json(result.rows);
     } catch (error) {
         console.error('Error fetching golden lines:', error);
@@ -411,7 +411,7 @@ router.get('/golden-lines', authenticateAdmin, async (req, res) => {
 // Add/Update golden line
 router.post('/golden-lines', authenticateAdmin, async (req, res) => {
     try {
-        console.log('💾 Saving golden line...');
+    
         const { id, profession, values, language } = req.body;
 
         if (!profession || !values || !language) {
@@ -436,7 +436,7 @@ router.post('/golden-lines', authenticateAdmin, async (req, res) => {
       `, [profession, JSON.stringify(values), language]);
         }
 
-        console.log(`✅ Golden line saved for profession: ${profession}`);
+    
         res.json(result.rows[0]);
     } catch (error) {
         console.error('Error saving golden line:', error);
@@ -447,7 +447,7 @@ router.post('/golden-lines', authenticateAdmin, async (req, res) => {
 // Delete golden line
 router.delete('/golden-lines/:id', authenticateAdmin, async (req, res) => {
     try {
-        console.log('🗑️ Deleting golden line...');
+    
         const { id } = req.params;
 
         const result = await pool.query('DELETE FROM golden_lines WHERE id = $1 RETURNING profession', [id]);
@@ -456,7 +456,7 @@ router.delete('/golden-lines/:id', authenticateAdmin, async (req, res) => {
             return res.status(404).json({ error: 'Golden line not found' });
         }
 
-        console.log(`✅ Golden line ${id} deleted`);
+    
         res.json({ message: 'Golden line deleted successfully' });
     } catch (error) {
         console.error('Error deleting golden line:', error);
@@ -469,7 +469,7 @@ router.delete('/golden-lines/:id', authenticateAdmin, async (req, res) => {
 // Get system settings
 router.get('/settings', authenticateAdmin, async (req, res) => {
     try {
-        console.log('⚙️ Fetching system settings...');
+    
         const result = await pool.query('SELECT * FROM system_settings ORDER BY setting_key');
 
         // Convert to key-value object
@@ -478,7 +478,7 @@ router.get('/settings', authenticateAdmin, async (req, res) => {
             settings[row.setting_key] = row.setting_value;
         });
 
-        console.log(`✅ Found ${result.rows.length} settings`);
+    
         res.json(settings);
     } catch (error) {
         console.error('Error fetching settings:', error);
@@ -489,7 +489,7 @@ router.get('/settings', authenticateAdmin, async (req, res) => {
 // Update system setting
 router.put('/settings/:key', authenticateAdmin, async (req, res) => {
     try {
-        console.log('💾 Updating system setting...');
+    
         const { key } = req.params;
         const { value } = req.body;
 
@@ -501,7 +501,7 @@ router.put('/settings/:key', authenticateAdmin, async (req, res) => {
       RETURNING *
     `, [key, value]);
 
-        console.log(`✅ Setting ${key} updated`);
+    
         res.json(result.rows[0]);
     } catch (error) {
         console.error('Error updating setting:', error);
@@ -514,7 +514,7 @@ router.put('/settings/:key', authenticateAdmin, async (req, res) => {
 // Get analytics data
 router.get('/analytics', authenticateAdmin, async (req, res) => {
     try {
-        console.log('📈 Fetching analytics...');
+    
         const { days = 30 } = req.query;
 
         const analyticsQuery = `
@@ -533,7 +533,7 @@ router.get('/analytics', authenticateAdmin, async (req, res) => {
     `;
 
         const result = await pool.query(analyticsQuery);
-        console.log(`✅ Analytics data for ${days} days`);
+    
         res.json(result.rows);
     } catch (error) {
         console.error('Error fetching analytics:', error);

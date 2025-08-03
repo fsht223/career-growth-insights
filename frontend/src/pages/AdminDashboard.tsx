@@ -102,7 +102,6 @@ const AdminDashboard: React.FC = () => {
     // API функции
     const fetchStats = async () => {
         try {
-            console.log('🔄 Fetching admin stats...');
             const token = localStorage.getItem('adminToken');
             const response = await fetch('/api/admin/stats', {
                 headers: {
@@ -116,7 +115,6 @@ const AdminDashboard: React.FC = () => {
             }
 
             const data = await response.json();
-            console.log('✅ Stats received:', data);
 
             setStats({
                 totalTests: data.stats?.total_tests || 0,
@@ -134,7 +132,6 @@ const AdminDashboard: React.FC = () => {
 
     const fetchCoaches = async () => {
         try {
-            console.log('🔄 Fetching coaches...');
             const token = localStorage.getItem('adminToken');
             const response = await fetch('/api/admin/coaches', {
                 headers: {
@@ -148,7 +145,6 @@ const AdminDashboard: React.FC = () => {
             }
 
             const data = await response.json();
-            console.log('✅ Coaches received:', data);
 
             const mappedCoaches = data.map((coach: any) => ({
                 id: coach.id,
@@ -169,7 +165,6 @@ const AdminDashboard: React.FC = () => {
 
     const fetchQuestions = async () => {
         try {
-            console.log('🔄 Fetching questions...');
             const token = localStorage.getItem('adminToken');
             const response = await fetch(`/api/admin/questions?language=${selectedLanguage}`, {
                 headers: {
@@ -183,7 +178,6 @@ const AdminDashboard: React.FC = () => {
             }
 
             const data = await response.json();
-            console.log('✅ Questions received:', data);
 
             const mappedQuestions = data.map((q: any) => ({
                 id: q.id,
@@ -212,7 +206,6 @@ const AdminDashboard: React.FC = () => {
             return;
         }
 
-            console.log('🔄 Creating coach...');
             const token = localStorage.getItem('adminToken');
             const response = await fetch('/api/admin/coaches', {
                 method: 'POST',
@@ -234,7 +227,6 @@ const AdminDashboard: React.FC = () => {
             }
 
             const data = await response.json();
-            console.log('✅ Coach created:', data);
 
             setNewCoach({
                 email: '',
@@ -261,7 +253,6 @@ const AdminDashboard: React.FC = () => {
                 return;
             }
 
-            console.log('🔄 Creating/updating question...');
             const token = localStorage.getItem('adminToken');
             const response = await fetch('/api/admin/questions', {
                 method: 'POST',
@@ -284,7 +275,6 @@ const AdminDashboard: React.FC = () => {
             }
 
             const data = await response.json();
-            console.log('✅ Question saved:', data);
 
         setEditingQuestion({
                 id: null,
@@ -310,7 +300,6 @@ const AdminDashboard: React.FC = () => {
         }
 
         try {
-            console.log('🔄 Deleting question...');
             const token = localStorage.getItem('adminToken');
             const response = await fetch(`/api/admin/questions/${questionId}`, {
                 method: 'DELETE',
@@ -325,7 +314,6 @@ const AdminDashboard: React.FC = () => {
                 throw new Error(errorData.error || 'Ошибка удаления вопроса');
             }
 
-            console.log('✅ Question deleted');
             await fetchQuestions();
 
         } catch (error) {
@@ -336,7 +324,6 @@ const AdminDashboard: React.FC = () => {
 
     const updateCoachStatus = async (coachId: number, newStatus: string) => {
         try {
-            console.log('🔄 Updating coach status...');
             const token = localStorage.getItem('adminToken');
             const response = await fetch(`/api/admin/coaches/${coachId}/status`, {
                 method: 'PUT',
@@ -352,7 +339,6 @@ const AdminDashboard: React.FC = () => {
                 throw new Error(errorData.error || 'Ошибка обновления статуса');
             }
 
-            console.log('✅ Coach status updated');
             await fetchCoaches();
 
         } catch (error) {

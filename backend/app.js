@@ -34,8 +34,17 @@ if (isDevelopment) {
   allowedOrigins = [process.env.FRONTEND_URL];
 }
 
-// Убираем undefined значения
+// Убираем undefined значения и добавляем fallback
 allowedOrigins = allowedOrigins.filter(Boolean);
+
+// Fallback для случая, когда FRONTEND_URL не установлен
+if (allowedOrigins.length === 0) {
+  if (isDevelopment) {
+    allowedOrigins = ['http://localhost:3000', 'http://localhost:3001'];
+  } else {
+    allowedOrigins = ['https://ditum.kz', 'https://www.ditum.kz'];
+  }
+}
 
 const corsOptions = {
   origin: function (origin, callback) {
@@ -118,7 +127,7 @@ try {
   const dashboardRoutes = require('./routes/dashboard');
   app.use('/api/dashboard', dashboardRoutes);
 
-  console.log('✅ All routes loaded successfully');
+
 } catch (error) {
   console.error('❌ Error loading routes:', error.message);
 }
@@ -153,8 +162,6 @@ app.use((req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔗 Allowed origins:`, isDevelopment ? allowedOrigins : ['***production origins***']);
-  console.log(`🏥 Health: http://localhost:${PORT}/health`);
 });
 
 module.exports = app;

@@ -80,12 +80,11 @@ class PDFService {
 
     // Process results for template
     const processedResults = this.processResultsForTemplate(testResult, testInfo, userInfo);
-    console.log('=== PDF DEBUG: processedResults ===');
+
     console.dir(processedResults, { depth: 5 });
 
     const html = compiledTemplate(processedResults);
-    console.log('=== PDF DEBUG: generated HTML ===');
-    console.log(html);
+
     return html;
   }
 

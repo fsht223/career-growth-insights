@@ -6,10 +6,10 @@ async function safeSetupDatabase() {
     const client = await pool.connect();
 
     try {
-        console.log('🚀 Starting safe database setup...');
+        
 
         // 1. Проверяем существующие таблицы
-        console.log('🔍 Checking existing tables...');
+        
         const existingTables = await client.query(`
             SELECT table_name
             FROM information_schema.tables
@@ -17,10 +17,10 @@ async function safeSetupDatabase() {
         `);
 
         const tableNames = existingTables.rows.map(row => row.table_name);
-        console.log('📊 Existing tables:', tableNames);
+        
 
         // 2. Применяем основную схему по частям
-        console.log('📋 Applying main schema safely...');
+        
 
         // UUID расширение
         await client.query('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"');
@@ -96,7 +96,7 @@ async function safeSetupDatabase() {
             try {
                 await client.query(query);
             } catch (error) {
-                console.log(`⚠️ Table creation warning: ${error.message}`);
+                
             }
         }
 
@@ -114,7 +114,7 @@ async function safeSetupDatabase() {
             try {
                 await client.query(indexQuery);
             } catch (error) {
-                console.log(`⚠️ Index warning: ${error.message}`);
+                
             }
         }
 
@@ -137,11 +137,11 @@ async function safeSetupDatabase() {
                 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
             `);
         } catch (error) {
-            console.log(`⚠️ Trigger warning: ${error.message}`);
+            
         }
 
         // 5. Создаем пользователей с правильными данными
-        console.log('👥 Creating users...');
+        
 
         // Создаем хеши паролей
         const adminPassword = await bcrypt.hash('Admin123!', 12);
@@ -186,14 +186,14 @@ async function safeSetupDatabase() {
                         role = EXCLUDED.role,
                         status = EXCLUDED.status
                 `, [user.email, user.password, user.firstName, user.lastName, user.role, user.status]);
-                console.log(`✅ User created/updated: ${user.email}`);
+                
             } catch (error) {
-                console.log(`⚠️ User creation warning: ${error.message}`);
+                
             }
         }
 
         // 6. Проверяем результат
-        console.log('🔍 Final check...');
+        
         const finalTables = await client.query(`
             SELECT table_name, table_type
             FROM information_schema.tables 
@@ -201,25 +201,23 @@ async function safeSetupDatabase() {
             ORDER BY table_name
         `);
 
-        console.log('📊 Database tables:');
+        
         finalTables.rows.forEach(row => {
-            console.log(`  - ${row.table_name}`);
+            
         });
 
         // Проверяем созданных пользователей
         const usersResult = await client.query('SELECT email, role, status FROM users ORDER BY email');
-        console.log('👥 Created users:');
+        
         usersResult.rows.forEach(user => {
-            console.log(`  - ${user.email} (${user.role}) - ${user.status}`);
+            
         });
 
         const usersCount = await client.query('SELECT COUNT(*) FROM users');
-        console.log(`\n📊 Total users: ${usersCount.rows[0].count}`);
+        
 
-        console.log('\n🎉 Database setup completed successfully!');
-        console.log('\n📝 Login credentials:');
-        console.log('   Demo Coach: demo@coach.com / Demo123!');
-        console.log('   Admin: admin@system.local / Admin123!');
+        
+        
 
     } catch (error) {
         console.error('❌ Database setup failed:', error);
@@ -234,7 +232,7 @@ async function safeSetupDatabase() {
 if (require.main === module) {
     safeSetupDatabase()
         .then(() => {
-            console.log('\n✨ Setup process completed!');
+            
             process.exit(0);
         })
         .catch((error) => {

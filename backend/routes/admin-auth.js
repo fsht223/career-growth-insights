@@ -171,7 +171,7 @@ router.post('/logout', async (req, res) => {
                     ipAddress
                 ]);
             } catch (tokenError) {
-                console.log('Token error during logout (continuing):', tokenError.message);
+            
             }
         }
 

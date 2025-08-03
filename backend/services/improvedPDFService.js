@@ -41,7 +41,7 @@ class ImprovedPDFService extends EventEmitter {
 
     try {
       this.isInitializing = true;
-      console.log('Initializing Puppeteer browser...');
+  
       
       this.browser = await puppeteer.launch({
         headless: 'new',
@@ -62,7 +62,7 @@ class ImprovedPDFService extends EventEmitter {
       this.isInitializing = false;
       this.emit('browserReady', this.browser);
       
-      console.log('Puppeteer browser initialized successfully');
+  
       return this.browser;
       
     } catch (error) {
@@ -87,7 +87,7 @@ class ImprovedPDFService extends EventEmitter {
   async closeBrowser() {
     if (this.browser) {
       try {
-        console.log('Closing Puppeteer browser due to inactivity');
+    
         await this.browser.close();
         this.browser = null;
         this.lastUsed = null;
@@ -141,7 +141,7 @@ class ImprovedPDFService extends EventEmitter {
 
   async processJob(job) {
     const startTime = Date.now();
-    console.log(`Starting PDF generation job ${job.id}...`);
+
 
     try {
       const browser = await this.initBrowser();
@@ -183,7 +183,7 @@ class ImprovedPDFService extends EventEmitter {
       await page.close();
 
       const processingTime = Date.now() - startTime;
-      console.log(`PDF generation job ${job.id} completed in ${processingTime}ms`);
+  
 
       // Emit success event
       this.emit('pdfGenerated', {
@@ -537,7 +537,7 @@ class ImprovedPDFService extends EventEmitter {
 
   // Graceful shutdown
   async shutdown() {
-    console.log('Shutting down PDF service...');
+
     
     // Wait for current jobs to complete
     while (this.currentJobs > 0) {
@@ -547,7 +547,7 @@ class ImprovedPDFService extends EventEmitter {
     // Close browser
     await this.closeBrowser();
     
-    console.log('PDF service shutdown complete');
+
   }
 }
 

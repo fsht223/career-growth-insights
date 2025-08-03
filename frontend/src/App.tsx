@@ -70,7 +70,6 @@ const SimpleTest: React.FC = () => (
 );
 
 const App: React.FC = () => {
-    console.log('App component rendered');
 
     return (
         <LanguageProvider>

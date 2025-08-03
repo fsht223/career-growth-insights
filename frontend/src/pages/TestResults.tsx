@@ -28,7 +28,7 @@ const TestResults = () => {
     let resultId = location.state?.resultId || localStorage.getItem('lastResultId');
     if (resultId) {
       ApiService.getReport(resultId).then(report => {
-        console.log('Fetched report:', report);
+
         setTestResults(report.results);
         setPdfStatus(report.pdfStatus || 'generating');
         setPdfUrl(report.pdfUrl || '');

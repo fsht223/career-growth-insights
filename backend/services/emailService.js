@@ -26,7 +26,7 @@ class EmailService {
             logger: process.env.NODE_ENV === 'development'
         };
 
-        console.log(`Initializing email service with host: ${smtpConfig.host}:${smtpConfig.port}`);
+    
 
         // ИСПРАВЛЕНИЕ: используем createTransport вместо createTransporter
         this.transporter = nodemailer.createTransport(smtpConfig);
@@ -69,9 +69,9 @@ class EmailService {
                 ]
             };
 
-            console.log(`Sending report email to: ${userInfo.email}`);
+        
             const result = await this.transporter.sendMail(mailOptions);
-            console.log('Report email sent successfully:', result.messageId);
+        
             return result;
 
         } catch (error) {
@@ -105,9 +105,9 @@ class EmailService {
                 html: htmlContent
             };
 
-            console.log(`Sending invitation email to: ${recipientEmail}`);
+        
             const result = await this.transporter.sendMail(mailOptions);
-            console.log('Invitation email sent successfully:', result.messageId);
+        
             return result;
 
         } catch (error) {
@@ -148,9 +148,9 @@ class EmailService {
                 html: htmlContent
             };
 
-            console.log(`Sending coach notification to: ${testData.coachEmail}`);
+        
             const result = await this.transporter.sendMail(mailOptions);
-            console.log('Coach notification sent successfully:', result.messageId);
+        
             return result;
 
         } catch (error) {
@@ -178,7 +178,7 @@ class EmailService {
             };
 
             const result = await this.transporter.sendMail(mailOptions);
-            console.log('✅ Test email sent successfully:', result.messageId);
+        
             return result;
 
         } catch (error) {
@@ -189,16 +189,16 @@ class EmailService {
 
     async testConnection() {
         try {
-            console.log('Testing email service connection...');
+        
 
             // Для разработки просто пропускаем проверку подключения
             if (process.env.NODE_ENV === 'development') {
-                console.log('✅ Email service connection skipped in development mode');
+            
                 return true;
             }
 
             await this.transporter.verify();
-            console.log('✅ Email service connection verified successfully');
+        
             return true;
         } catch (error) {
             console.error('❌ Email service connection failed:', error.message);

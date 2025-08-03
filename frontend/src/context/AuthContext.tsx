@@ -49,7 +49,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       try {
         if (ApiService.isAuthenticated()) {
           // Verify token with backend with timeout
-          const timeoutPromise = new Promise((_, reject) => 
+          const timeoutPromise = new Promise<never>((_, reject) => 
             setTimeout(() => reject(new Error('Request timeout')), 5000)
           );
           

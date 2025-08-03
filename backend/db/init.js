@@ -11,7 +11,7 @@ async function initDatabase() {
     // Execute schema
     await pool.query(schema);
     
-    console.log('Database initialized successfully');
+    
     process.exit(0);
   } catch (error) {
     console.error('Failed to initialize database:', error);

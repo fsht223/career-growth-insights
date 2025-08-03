@@ -48,6 +48,10 @@ class ApiService {
   }
 
   private async request(endpoint: string, options: RequestInit = {}): Promise<any> {
+    if (!endpoint || typeof endpoint !== 'string') {
+      throw new Error('Invalid endpoint provided');
+    }
+
     const url = `${this.baseURL}${endpoint}`;
     const config: RequestInit = {
       headers: {

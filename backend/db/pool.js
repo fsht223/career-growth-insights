@@ -29,14 +29,6 @@ if (process.env.DATABASE_URL) {
   }
 }
 
-console.log('🔗 Connecting to PostgreSQL:', {
-  host: poolConfig.host,
-  port: poolConfig.port,
-  database: poolConfig.database,
-  user: poolConfig.user,
-  ssl: poolConfig.ssl
-});
-
 const pool = new Pool(poolConfig);
 
 // Обработка ошибок подключения
@@ -47,7 +39,7 @@ pool.on('error', (err, client) => {
 
 // Тест подключения
 pool.on('connect', () => {
-  console.log('✅ Connected to PostgreSQL database');
+  
 });
 
 module.exports = pool;

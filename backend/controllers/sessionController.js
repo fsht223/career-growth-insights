@@ -120,15 +120,7 @@ const saveAnswer = async (req, res) => {
     const { id: testId } = req.params;
     const { sessionId, questionId, answer, motivationalSelection } = req.body;
 
-    // ===== ADD THIS DEBUG CODE =====
-    console.log('\n=== SAVE ANSWER DEBUG ===');
-    console.log('Question ID:', questionId);
-    console.log('Request body:', JSON.stringify(req.body, null, 2));
-    console.log('Answer:', answer);
-    console.log('Motivational Selection:', motivationalSelection);
-    console.log('Motivational Selection type:', typeof motivationalSelection);
-    console.log('Is motivationalSelection array?:', Array.isArray(motivationalSelection));
-    // ===== END DEBUG CODE =====
+
     // Get current session
     const sessionResult = await client.query(
       'SELECT * FROM test_sessions WHERE session_id = $1 AND test_id = $2',
@@ -198,22 +190,7 @@ const completeTest = async (req, res) => {
 
     const session = sessionResult.rows[0];
 
-    // ===== ADD THIS DEBUG CODE =====
-    console.log('\n=== SESSION DEBUG DATA ===');
-    console.log('Session ID:', session.session_id);
-    console.log('Session answers type:', typeof session.answers);
-    console.log('Session answers:', session.answers);
-    
-    if (session.answers) {
-      console.log('Answers keys:', Object.keys(session.answers));
-      console.log('Sample answers:');
-      for (let i = 1; i <= 5; i++) {
-        console.log(`Answer ${i}:`, session.answers[i]);
-      }
-    }
-    
-    console.log('Motivational selection:', session.motivational_selection);
-    // ===== END DEBUG CODE =====
+
 
     if (session.completed) {
       await client.query('ROLLBACK');
@@ -386,42 +363,40 @@ const calculateTestResults = (session, test) => {
   let totalAssignedPoints = 0;
   let processedQuestions = 0;
 
-  console.log('=== STARTING CALCULATION DEBUG ===');
-  console.log('Session answers keys:', Object.keys(answers));
-  console.log('Sample answer:', answers['0']);
+
+
   
   // FIXED: Handle the indexing mismatch
   // Frontend saves answers as 0-38, but we need to process as 1-39
   for (let qId = 1; qId <= 39; qId++) {
     const question = require('../data/questions').getQuestionById(qId);
     
-    console.log(`\n--- Question ${qId} ---`);
+
     
     if (!question) {
-      console.log(`❌ Question ${qId} not found`);
+
       continue;
     }
     
     if (!question.options || question.options.length !== 3) {
-      console.log(`❌ Question ${qId} invalid options:`, question.options);
+
       continue;
     }
     
-    console.log(`Question ${qId} options:`, question.options.map(opt => `${opt.id}:${opt.group}`));
+
     
     // FIXED: Use (qId - 1) to get the answer, since frontend uses 0-based indexing
     const answerKey = (qId - 1).toString();
     const answer = answers[answerKey];
-    console.log(`Answer for Q${qId} (key: ${answerKey}):`, answer);
+
     
     if (answer && answer.first && answer.second) {
-      console.log(`✅ Valid answer - First: ${answer.first}, Second: ${answer.second}`);
+
       
       const firstOption = question.options.find(opt => opt.id === answer.first);
       const secondOption = question.options.find(opt => opt.id === answer.second);
       
-      console.log('First option found:', firstOption);
-      console.log('Second option found:', secondOption);
+
       
       if (firstOption && secondOption) {
         // Find the third option (not selected)
@@ -429,80 +404,55 @@ const calculateTestResults = (session, test) => {
           opt.id !== answer.first && opt.id !== answer.second
         );
         
-        console.log('Third option found:', thirdOption);
+
 
         // Assign points: 3 to first, 2 to second, 1 to third
         if (firstOption.group && groupScores.hasOwnProperty(firstOption.group)) {
           groupScores[firstOption.group] += 3;
           totalAssignedPoints += 3;
-          console.log(`+3 points to ${firstOption.group} (total now: ${groupScores[firstOption.group]})`);
+
         }
         
         if (secondOption.group && groupScores.hasOwnProperty(secondOption.group)) {
           groupScores[secondOption.group] += 2;
           totalAssignedPoints += 2;
-          console.log(`+2 points to ${secondOption.group} (total now: ${groupScores[secondOption.group]})`);
+
         }
         
         if (thirdOption && thirdOption.group && groupScores.hasOwnProperty(thirdOption.group)) {
           groupScores[thirdOption.group] += 1;
           totalAssignedPoints += 1;
-          console.log(`+1 point to ${thirdOption.group} (total now: ${groupScores[thirdOption.group]})`);
+
         }
         
         processedQuestions++;
-        console.log(`Question ${qId} processed successfully. Running total: ${totalAssignedPoints}`);
+
       } else {
-        console.log(`❌ Invalid answer options for question ${qId}`);
-        console.log('Available option IDs:', question.options.map(opt => opt.id));
-        console.log('User selected:', { first: answer.first, second: answer.second });
+
         
         // Fallback: assign 1 point to each option
         question.options.forEach(opt => {
           if (opt.group && groupScores.hasOwnProperty(opt.group)) {
             groupScores[opt.group] += 1;
             totalAssignedPoints += 1;
-            console.log(`Fallback +1 point to ${opt.group}`);
+
           }
         });
       }
     } else {
-      console.log(`❌ Incomplete/missing answer for question ${qId}`);
+
       // Fallback: assign 1 point to each option if answer is missing/incomplete
       question.options.forEach(opt => {
         if (opt.group && groupScores.hasOwnProperty(opt.group)) {
           groupScores[opt.group] += 1;
           totalAssignedPoints += 1;
-          console.log(`Missing answer fallback +1 point to ${opt.group}`);
+
         }
       });
     }
   }
 
-  // Final debug logging
-  console.log('\n=== FINAL CALCULATION RESULTS ===');
-  console.log('Processed questions:', processedQuestions);
-  console.log('Total assigned points:', totalAssignedPoints);
-  console.log('Expected total points (39 questions × 6 points):', 39 * 6);
-  console.log('Group scores:', groupScores);
-  console.log('Sum of all group scores:', Object.values(groupScores).reduce((a, b) => a + b, 0));
-  
-  // Check if we have all expected buttons
-  const missingButtons = ALL_BUTTONS.filter(btn => !groupScores.hasOwnProperty(btn));
-  if (missingButtons.length > 0) {
-    console.log('Missing buttons in groupScores:', missingButtons);
-  }
-  
-  // Check for zero scores
-  const zeroScores = Object.entries(groupScores).filter(([btn, score]) => score === 0);
-  if (zeroScores.length > 0) {
-    console.log('Buttons with zero scores:', zeroScores);
-  }
 
-  // Debug: print sum of all button scores and number of answered questions
-  const totalScore = Object.values(groupScores).reduce((a, b) => a + b, 0);
-  const answeredQuestions = Object.keys(answers).filter(q => parseInt(q) >= 1 && parseInt(q) <= 39).length;
-  console.log('DEBUG: Total button score:', totalScore, '| Answered questions:', answeredQuestions);
 
   // Calculate percentages for each button
   const percentages = {};
@@ -531,11 +481,8 @@ const calculateTestResults = (session, test) => {
       starredItems = [];
     }
     
-    console.log('=== STARRED ITEMS DEBUG ===');
-    console.log('Raw motivational_selection:', session.motivational_selection);
-    console.log('Type:', typeof session.motivational_selection);
-    console.log('Parsed starredItems:', starredItems);
-    console.log('StarredItems length:', starredItems.length);
+  
+
     
   } catch (error) {
     console.error('Error parsing motivational_selection:', error);
